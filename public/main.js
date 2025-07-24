@@ -862,7 +862,12 @@ socket.on('updateScores', (scores) => {
 socket.on('killFeed', (data) => {
   // GameStage1 인스턴스가 존재하고 ui 속성이 있는지 확인
   if (window.currentGameStage1 && window.currentGameStage1.ui) {
-    window.currentGameStage1.ui.addKillFeedMessage(data.attackerName, data.victimName); //%%수정됨
+    window.currentGameStage1.ui.addKillFeedMessage(
+      data.attackerName,
+      data.victimName,
+      data.attackerCharacter, // 추가
+      data.victimCharacter    // 추가
+    ); //%%수정됨
   }
 });
 

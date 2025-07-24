@@ -281,7 +281,7 @@ io.on('connection', (socket) => {
           const attacker = room.players.find(p => p.id === data.attackerId);
           if (attacker && attacker.id !== targetPlayer.id) { // 공격자가 자신과 다를 경우에만 킬 증가
             attacker.kills++;
-            io.to(socket.roomId).emit('killFeed', { attackerName: attacker.nickname, victimName: targetPlayer.nickname });
+            io.to(socket.roomId).emit('killFeed', { attackerName: attacker.nickname, victimName: targetPlayer.nickname, attackerCharacter: attacker.character, victimCharacter: targetPlayer.character });
           }
           io.to(socket.roomId).emit('updateScores', room.players.map(p => ({ nickname: p.nickname, kills: p.kills, deaths: p.deaths }))); //%%수정됨
         }

@@ -1,8 +1,5 @@
-feat: 게임 로직 및 UI 개선
+feat: 킬로그에 캐릭터 PNG 표시 기능 추가
 
-- `main.js`에서 소켓 이벤트 리스너의 스코프를 수정하여 `this.socket` 오류 해결
-- `GameStage1` 인스턴스를 전역 `window.currentGameStage1`에 할당하여 UI 업데이트 로직 개선
-- `hp.js`에서 플레이어 사망 시 공격자 ID를 처리하도록 로직 추가
-- `player.js`에서 `playerDamage` 이벤트에 공격자 ID를 포함하도록 수정
-- `server.js`에서 `updateScores` 및 `killFeed` 이벤트 처리 로직 개선 및 플레이어 사망 시 처리 로직 추가
-- `ui.js` 파일을 `public/ui.js`로 재구성하여 UI 관련 로직 분리
+- `server.js`에서 `killFeed` 이벤트에 공격자와 피해자의 캐릭터 정보 추가
+- `public/main.js`에서 `killFeed` 이벤트 수신 시 캐릭터 정보를 `UI` 클래스로 전달
+- `public/ui.js`의 `addKillFeedMessage` 함수를 수정하여 킬로그에 캐릭터 PNG 표시
