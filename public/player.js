@@ -485,8 +485,8 @@ export const player = (() => {
                 onHit: (target) => {
                   console.log(`${attacker.nickname_} hit ${target.nickname_ || 'NPC'} with ${weapon.name}!`);
                   if (this.socket_ && target.params_.isRemote) { // 원격 플레이어에게만 데미지 이벤트 전송
-                    console.log(`[Player] Emitting playerDamage: targetId=${target.params_.playerId}, damage=${weapon.damage}`);
-                    this.socket_.emit('playerDamage', { targetId: target.params_.playerId, damage: weapon.damage });
+                    console.log(`[Player] Emitting playerDamage: targetId=${target.params_.playerId}, damage=${weapon.damage}, attackerId=${attacker.socket_.id}`); //**수정 attackerId 추가
+                    this.socket_.emit('playerDamage', { targetId: target.params_.playerId, damage: weapon.damage, attackerId: attacker.socket_.id }); //**수정 attackerId 추가
                   }
                 }
               });
@@ -502,8 +502,8 @@ export const player = (() => {
                 onHit: (target) => {
                   console.log(`${attacker.nickname_} hit ${target.nickname_ || 'NPC'} with ${weapon.name}!`);
                   if (this.socket_ && target.params_.isRemote) { // 원격 플레이어에게만 데미지 이벤트 전송
-                    console.log(`[Player] Emitting playerDamage: targetId=${target.params_.playerId}, damage=${weapon.damage}`);
-                    this.socket_.emit('playerDamage', { targetId: target.params_.playerId, damage: weapon.damage });
+                    console.log(`[Player] Emitting playerDamage: targetId=${target.params_.playerId}, damage=${weapon.damage}, attackerId=${attacker.socket_.id}`); //**수정 attackerId 추가
+                    this.socket_.emit('playerDamage', { targetId: target.params_.playerId, damage: weapon.damage, attackerId: attacker.socket_.id }); //**수정 attackerId 추가
                   }
                 }
               });
