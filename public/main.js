@@ -71,6 +71,7 @@ export class GameStage1 {
 
     window.addEventListener('resize', () => this.OnWindowResize(), false);
     document.addEventListener('keydown', (e) => this._OnKeyDown(e), false);
+    document.addEventListener('keyup', (e) => this._OnKeyUp(e), false); // KeyUp 이벤트 리스너 추가 //%%수정
   }
 
   SetupLighting() {
@@ -380,6 +381,7 @@ export class GameStage1 {
   }
 
   _OnKeyDown(event) {
+    console.log(`_OnKeyDown: ${event.keyCode}`); // 디버그 로그 추가 //%%수정
     switch (event.keyCode) {
       case 69: // E key
         if (this.player_ && this.player_.mesh_) {
@@ -418,7 +420,21 @@ export class GameStage1 {
           this.socket.emit('playerAttack', attackAnimation); // 서버에 공격 애니메이션 정보 전송
         }
         break;
+      case 9: // Tab key //%%수정
+        event.preventDefault(); // 기본 동작 방지 (예: 포커스 이동) //%%수정
+        ui.toggleScoreboard(true); // 스코어보드 표시 //%%수정
+        break; //%%수정
     }
+  }
+
+  _OnKeyUp(event) { //%%수정
+    console.log(`_OnKeyUp: ${event.keyCode}`); // 디버그 로그 추가 //%%수정
+    switch (event.keyCode) { //%%수정
+      case 9: // Tab key //%%수정
+        event.preventDefault(); // 기본 동작 방지 //%%수정
+        ui.toggleScoreboard(false); // 스코어보드 숨김 //%%수정
+        break; //%%수정
+    } //%%수정
   }
 
   RAF(time) {
@@ -445,22 +461,24 @@ export class GameStage1 {
 
       // 맵 경계 체크 및 데미지 적용
       const playerPos = this.player_.mesh_.position;
-      if (
-        playerPos.x < this.mapBounds.minX ||
-        playerPos.x > this.mapBounds.maxX ||
-        playerPos.z < this.mapBounds.minZ ||
-        playerPos.z > this.mapBounds.maxZ
-      ) {
-        this.damageTimer += delta;
-        if (this.damageTimer >= this.damageInterval) {
-          const newHp = this.player_.hp_ - this.damageAmount;
-          this.player_.TakeDamage(newHp); // TakeDamage 함수에 새로운 HP 값 전달
-          this.player_.hp_ = newHp; // 실제 HP 값 업데이트
-          this.player_.hpUI.updateHP(newHp); // HP UI 업데이트
-          this.damageTimer = 0;
+      if (this.mapBounds) { // mapBounds가 정의되었는지 확인 //%%수정
+        if (
+          playerPos.x < this.mapBounds.minX ||
+          playerPos.x > this.mapBounds.maxX ||
+          playerPos.z < this.mapBounds.minZ ||
+          playerPos.z > this.mapBounds.maxZ
+        ) {
+          this.damageTimer += delta;
+          if (this.damageTimer >= this.damageInterval) {
+            const newHp = this.player_.hp_ - this.damageAmount;
+            this.player_.TakeDamage(newHp); // TakeDamage 함수에 새로운 HP 값 전달
+            this.player_.hp_ = newHp; // 실제 HP 값 업데이트
+            this.player_.hpUI.updateHP(newHp); // HP UI 업데이트
+            this.damageTimer = 0;
+          }
+        } else {
+          this.damageTimer = 0; // 맵 안으로 들어오면 타이머 초기화
         }
-      } else {
-        this.damageTimer = 0; // 맵 안으로 들어오면 타이머 초기화
       }
 
       // HP UI 업데이트
