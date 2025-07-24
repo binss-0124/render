@@ -12,10 +12,10 @@ const socket = io();
 const ui = new UI(); // UI 인스턴스 생성 추가 //%%수정
 
 export class GameStage1 {
-  constructor(socket, players, map, spawnedWeapons) {
+  constructor(socket, players, map, spawnedWeapons, localPlayerId) { // localPlayerId 매개변수 추가
     this.socket = socket;
     this.players = {}; // To store other players' objects
-    this.localPlayerId = socket.id;
+    this.localPlayerId = localPlayerId; // localPlayerId 설정
     this.playerInfo = players;
     this.map = map;
     this.spawnedWeapons = spawnedWeapons; // Store spawned weapons data
@@ -766,7 +766,7 @@ socket.on('updatePlayers', (players, maxPlayers) => {
 socket.on('startGame', (gameInfo) => {
   waitingRoom.style.display = 'none';
   controls.style.display = 'block';
-  new GameStage1(socket, gameInfo.players, gameInfo.map, gameInfo.spawnedWeapons);
+  new GameStage1(socket, gameInfo.players, gameInfo.map, gameInfo.spawnedWeapons, socket.id); // socket.id 전달 //%%수정
 });
 
 socket.on('roomError', (message) => {
