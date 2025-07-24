@@ -23,6 +23,13 @@ export class GameStage1 {
     this.spawnedWeapons = spawnedWeapons; // Store spawned weapons data
     this.spawnedWeaponObjects = []; // Store actual Weapon instances
 
+    // 로컬 플레이어의 킬/데스 정보 초기화 //%%수정
+    const initialLocalPlayerInfo = this.playerInfo.find(p => p.id === this.localPlayerId); //%%수정
+    this.localPlayerStats = { //%%수정
+      kills: initialLocalPlayerInfo ? initialLocalPlayerInfo.kills : 0, //%%수정
+      deaths: initialLocalPlayerInfo ? initialLocalPlayerInfo.deaths : 0 //%%수정
+    }; //%%수정
+
     this.Initialize();
     this.RAF();
     this.SetupSocketEvents();
@@ -475,6 +482,25 @@ export class GameStage1 {
             this.player_.hp_ = newHp; // 실제 HP 값 업데이트
             this.player_.hpUI.updateHP(newHp); // HP UI 업데이트
             this.damageTimer = 0;
+
+            // 낙사로 HP가 0 이하가 되면 데스 카운트 증가 및 UI 업데이트 //%%수정
+            if (newHp <= 0) { //%%수정
+              this.localPlayerStats.deaths++; //%%수정
+              console.log(`main.js: Local player deaths: ${this.localPlayerStats.deaths}`); // 디버그 로그 //%%수정
+              // 서버에 데스 정보 전송 (서버에서 킬/데스 관리 시 필요) //%%수정
+              this.socket.emit('playerDied', { playerId: this.localPlayerId }); //%%수정
+              // UI 업데이트 (스코어보드 및 개인 K/D) //%%수정
+              // 현재 플레이어 목록을 가져와서 업데이트해야 함. 여기서는 임시로 로컬 스탯만 반영 //%%수정
+              // 실제 게임에서는 서버로부터 업데이트된 전체 플레이어 목록을 받아와야 함 //%%수정
+              const updatedPlayers = this.playerInfo.map(p => { //%%수정
+                if (p.id === this.localPlayerId) { //%%수정
+                  return { ...p, deaths: this.localPlayerStats.deaths }; //%%수정
+                } //%%수정
+                return p; //%%수정
+              }); //%%수정
+              ui.updateKD(this.localPlayerId, updatedPlayers); //%%수정
+              ui.updateScoreboard(updatedPlayers); //%%수정
+            } //%%수정
           }
         } else {
           this.damageTimer = 0; // 맵 안으로 들어오면 타이머 초기화
