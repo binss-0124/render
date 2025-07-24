@@ -19,7 +19,9 @@ function updateRoomPlayers(roomId) {
       id: p.id,
       nickname: p.nickname, // Add nickname
       ready: p.ready,
-      character: p.character // Add character
+      character: p.character, // Add character
+      kills: p.kills, //**수정 Add kills
+      deaths: p.deaths //**수정 Add deaths
     }));
     io.to(roomId).emit('updatePlayers', playersData, rooms[roomId].maxPlayers);
   }
