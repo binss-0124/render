@@ -1,6 +1,8 @@
-feat: 플레이어 킬 카운트 기능 구현 및 타이머 UI 개선
+feat: 게임 로직 및 UI 개선
 
-- 캐릭터 HP 0 도달 시 마지막 공격자 킬 수 증가 로직 서버에 구현
-- 클라이언트에서 불필요한 playerKilled 이벤트 전송 로직 제거
-- 서버에서 playerKilled 이벤트 핸들러 제거
-- 화면 타이머 디자인 개선
+- `main.js`에서 소켓 이벤트 리스너의 스코프를 수정하여 `this.socket` 오류 해결
+- `GameStage1` 인스턴스를 전역 `window.currentGameStage1`에 할당하여 UI 업데이트 로직 개선
+- `hp.js`에서 플레이어 사망 시 공격자 ID를 처리하도록 로직 추가
+- `player.js`에서 `playerDamage` 이벤트에 공격자 ID를 포함하도록 수정
+- `server.js`에서 `updateScores` 및 `killFeed` 이벤트 처리 로직 개선 및 플레이어 사망 시 처리 로직 추가
+- `ui.js` 파일을 `public/ui.js`로 재구성하여 UI 관련 로직 분리

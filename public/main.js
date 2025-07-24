@@ -822,9 +822,29 @@ socket.on('roomError', (message) => {
   joinRoomPopup.style.display = 'none';
 });
 
-socket.on('updateTimer', (time) => {
-    const minutes = Math.floor(time / 60);
-    const seconds = time % 60;
+socket.on('updateTimer', (data) => {
+
+    let time;
+    let serverTime;
+
+    if (typeof data === 'object' && data !== null && 'time' in data && 'serverTime' in data) {
+        time = parseInt(data.time, 10); // 명시적으로 숫자로 변환
+        serverTime = data.serverTime;
+    } else {
+        // data가 직접 time 값인 경우 (이전 서버 버전과의 호환성 또는 예상치 못한 데이터 형식)
+        time = parseInt(data, 10); // 명시적으로 숫자로 변환
+        serverTime = Date.now(); // 클라이언트 현재 시간을 서버 시간으로 간주 (정확도는 떨어짐)
+    }
+
+    // 클라이언트와 서버 간의 시간 차이 계산 (네트워크 지연 보정)
+    const latency = Date.now() - serverTime;
+    let adjustedTime = time - Math.round(latency / 1000); // 초 단위로 보정
+    if (adjustedTime < 0) { // adjustedTime이 음수가 될 경우 0으로 처리
+        adjustedTime = 0;
+    }
+
+    const minutes = Math.floor(adjustedTime / 60);
+    const seconds = adjustedTime % 60;
     const timerElement = document.getElementById('timer'); //%%수정됨
     if (timerElement) { //%%수정됨
         timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;

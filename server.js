@@ -174,7 +174,7 @@ io.on('connection', (socket) => {
       const gameTimer = setInterval(() => {
         if (room.gameState.timer > 0) {
           room.gameState.timer--;
-          io.to(socket.roomId).emit('updateTimer', room.gameState.timer);
+          io.to(socket.roomId).emit('updateTimer', { time: room.gameState.timer, serverTime: Date.now() });
         } else {
           clearInterval(gameTimer);
           io.to(socket.roomId).emit('gameEnd', room.players.map(p => ({ nickname: p.nickname, kills: p.kills, deaths: p.deaths })));
