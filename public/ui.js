@@ -43,35 +43,35 @@ export class UI {
     killMessage.style.alignItems = 'center'; // 세로 중앙 정렬
     killMessage.style.justifyContent = 'flex-end'; // 오른쪽 정렬
     killMessage.style.color = 'white';
-    killMessage.style.marginBottom = '5px';
-    killMessage.style.fontSize = '18px'; // 폰트 크기 조정
+    killMessage.style.marginBottom = '8px'; // 마진 증가
+    killMessage.style.fontSize = '22px'; // 폰트 크기 증가
     killMessage.style.fontWeight = 'bold'; // 폰트 굵기 조정
-    killMessage.style.textShadow = '1px 1px 2px rgba(0,0,0,0.7)'; // 텍스트 그림자 추가
+    killMessage.style.textShadow = '1px 1px 3px rgba(0,0,0,0.9)'; // 텍스트 그림자 강화
 
     // 공격자 이미지
     const attackerImg = document.createElement('img');
     attackerImg.src = `./resources/character/${attackerCharacter}.png`;
-    attackerImg.style.width = '30px'; // 이미지 크기 조정
-    attackerImg.style.height = '30px';
+    attackerImg.style.width = '40px'; // 이미지 크기 증가
+    attackerImg.style.height = '40px';
     attackerImg.style.borderRadius = '50%'; // 원형 이미지
-    attackerImg.style.marginRight = '5px';
-    attackerImg.style.border = '1px solid #00ff00'; // 공격자 테두리 색상
+    attackerImg.style.marginRight = '8px'; // 마진 증가
+    attackerImg.style.border = '2px solid #00ff00'; // 공격자 테두리 색상 및 두께 증가
 
     // 해골 아이콘 (킬 표시)
     const skullIcon = document.createElement('img');
     skullIcon.src = `./resources/skull_icon.png`; // 해골 아이콘 경로 (추후 추가 필요)
-    skullIcon.style.width = '20px';
-    skullIcon.style.height = '20px';
-    skullIcon.style.margin = '0 5px';
+    skullIcon.style.width = '25px'; // 아이콘 크기 증가
+    skullIcon.style.height = '25px';
+    skullIcon.style.margin = '0 8px'; // 마진 증가
 
     // 피해자 이미지
     const victimImg = document.createElement('img');
     victimImg.src = `./resources/character/${victimCharacter}.png`;
-    victimImg.style.width = '30px';
-    victimImg.style.height = '30px';
+    victimImg.style.width = '40px'; // 이미지 크기 증가
+    victimImg.style.height = '40px';
     victimImg.style.borderRadius = '50%';
-    victimImg.style.marginLeft = '5px';
-    victimImg.style.border = '1px solid #ff0000'; // 피해자 테두리 색상
+    victimImg.style.marginLeft = '8px'; // 마진 증가
+    victimImg.style.border = '2px solid #ff0000'; // 피해자 테두리 색상 및 두께 증가
 
     // 텍스트 요소
     const attackerText = document.createElement('span');
@@ -101,30 +101,58 @@ export class UI {
   }
 
   showFinalScoreboard(finalScores) {
+    // 기존 스코어보드 테이블 제거 및 새로운 디자인 적용
+    this.finalScoreboard.innerHTML = ''; // 기존 내용 비우기
+
+    const gameEndTitle = document.createElement('h2');
+    gameEndTitle.textContent = 'Game Over';
+    gameEndTitle.style.fontSize = '60px'; // 제목 크기 증가
+    gameEndTitle.style.color = 'white';
+    gameEndTitle.style.textShadow = '3px 3px 6px rgba(0,0,0,0.8)';
+    gameEndTitle.style.marginBottom = '30px';
+    this.finalScoreboard.appendChild(gameEndTitle);
+
     const finalScoreboardTable = document.createElement('table');
     finalScoreboardTable.style.color = 'white';
-    finalScoreboardTable.style.width = '400px';
+    finalScoreboardTable.style.width = '600px'; // 테이블 너비 증가
     finalScoreboardTable.style.borderCollapse = 'collapse';
+    finalScoreboardTable.style.background = 'rgba(0, 0, 0, 0.7)'; // 배경 추가
+    finalScoreboardTable.style.borderRadius = '15px'; // 둥근 모서리
+    finalScoreboardTable.style.boxShadow = '0 0 25px rgba(76, 175, 80, 0.7)'; // 그림자 추가
+    finalScoreboardTable.style.padding = '20px'; // 패딩 추가
+
     finalScoreboardTable.innerHTML = `
       <thead>
         <tr>
-          <th style="padding: 10px; border-bottom: 1px solid white;">Player</th>
-          <th style="padding: 10px; border-bottom: 1px solid white;">Kills</th>
-          <th style="padding: 10px; border-bottom: 1px solid white;">Deaths</th>
+          <th style="padding: 15px; border-bottom: 2px solid white; font-size: 24px;">Player</th>
+          <th style="padding: 15px; border-bottom: 2px solid white; font-size: 24px;">Kills</th>
+          <th style="padding: 15px; border-bottom: 2px solid white; font-size: 24px;">Deaths</th>
         </tr>
       </thead>
       <tbody>
         ${finalScores.map(player => `
           <tr>
-            <td style="padding: 10px;">${player.nickname}</td>
-            <td style="padding: 10px;">${player.kills}</td>
-            <td style="padding: 10px;">${player.deaths}</td>
+            <td style="padding: 12px; font-size: 20px;">${player.nickname}</td>
+            <td style="padding: 12px; font-size: 20px;">${player.kills}</td>
+            <td style="padding: 12px; font-size: 20px;">${player.deaths}</td>
           </tr>
         `).join('')}
       </tbody>
     `;
-    this.finalScoreboard.innerHTML = '';
     this.finalScoreboard.appendChild(finalScoreboardTable);
+
+    // "대기실로 돌아가기" 버튼 스타일 조정
+    this.backToLobbyButton.style.padding = '20px 40px';
+    this.backToLobbyButton.style.fontSize = '30px';
+    this.backToLobbyButton.style.marginTop = '40px';
+    this.backToLobbyButton.style.backgroundColor = '#d97d3d';
+    this.backToLobbyButton.style.borderRadius = '10px';
+    this.backToLobbyButton.style.boxShadow = '0 5px 15px rgba(0,0,0,0.5)';
+    this.finalScoreboard.appendChild(this.backToLobbyButton); // 버튼을 finalScoreboard에 추가
+
     this.gameEndScreen.style.display = 'flex';
+    this.gameEndScreen.style.flexDirection = 'column'; // 세로 정렬
+    this.gameEndScreen.style.justifyContent = 'center'; // 수직 중앙 정렬
+    this.gameEndScreen.style.alignItems = 'center'; // 수평 중앙 정렬
   }
 }
