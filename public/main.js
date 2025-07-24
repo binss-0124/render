@@ -348,7 +348,6 @@ export class GameStage1 {
           targetPlayer.isDead_ = true;
           targetPlayer.SetAnimation_('Death');
           if (data.playerId === this.localPlayerId) { // 로컬 플레이어인 경우에만 사망 UI 및 타이머 트리거
-            this.socket.emit('playerKilled', { victimId: data.playerId, attackerId: data.attackerId });
             targetPlayer.DisableInput_();
             targetPlayer.respawnTimer_ = targetPlayer.respawnDelay_;
             if (targetPlayer.overlay) {
