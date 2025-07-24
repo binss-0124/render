@@ -52,7 +52,7 @@ export class UI {
     attackerImg.style.height = '30px';
     attackerImg.style.borderRadius = '50%'; // 원형 이미지
     attackerImg.style.marginRight = '5px';
-    attackerImg.style.border = '1px solid white'; // 테두리 추가
+    attackerImg.style.border = '1px solid #00ff00'; // 공격자 테두리 색상
 
     // 해골 아이콘 (킬 표시)
     const skullIcon = document.createElement('img');
@@ -68,7 +68,7 @@ export class UI {
     victimImg.style.height = '30px';
     victimImg.style.borderRadius = '50%';
     victimImg.style.marginLeft = '5px';
-    victimImg.style.border = '1px solid white';
+    victimImg.style.border = '1px solid #ff0000'; // 피해자 테두리 색상
 
     // 텍스트 요소
     const attackerText = document.createElement('span');
