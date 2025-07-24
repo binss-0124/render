@@ -763,6 +763,7 @@ socket.on('updatePlayers', (players, maxPlayers) => {
   ui.updateScoreboard(players); //**수정 스코어보드 업데이트
   ui.updateKD(socket.id, players); //**수정 K/D 업데이트
   playerSlotsContainer.innerHTML = '';
+}); //**수정 닫는 중괄호 추가
 
 socket.on('startGame', (gameInfo) => {
   waitingRoom.style.display = 'none';
