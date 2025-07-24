@@ -29,6 +29,7 @@ export class GameStage1 {
       kills: initialLocalPlayerInfo ? initialLocalPlayerInfo.kills : 0, //%%수정
       deaths: initialLocalPlayerInfo ? initialLocalPlayerInfo.deaths : 0 //%%수정
     }; //%%수정
+    this.deathHandledThisFall = false; // 낙사 데스 중복 방지 플래그 //%%수정
 
     this.Initialize();
     this.RAF();
@@ -370,6 +371,10 @@ export class GameStage1 {
         } else if (data.hp > 0 && targetPlayer.isDead_) { // 리스폰
           targetPlayer.isDead_ = false;
           targetPlayer.Respawn_(); // Respawn_ 함수 호출하여 상태 및 위치 재설정
+          if (data.playerId === this.localPlayerId) { // 로컬 플레이어 리스폰 시 플래그 재설정 //%%수정
+            this.deathHandledThisFall = false; //%%수정
+            console.log('main.js: Local player respawned, deathHandledThisFall reset.'); // 디버그 로그 //%%수정
+          } //%%수정
         } else if (data.hp < oldHp) { // HP가 실제로 감소했을 때만 피격 효과 트리거
           // 로컬 플레이어인 경우 피격 효과 (빨간 화면) 트리거
           if (data.playerId === this.localPlayerId && targetPlayer.hitEffect) {
@@ -484,9 +489,10 @@ export class GameStage1 {
             this.damageTimer = 0;
 
             // 낙사로 HP가 0 이하가 되면 데스 카운트 증가 및 UI 업데이트 //%%수정
-            if (newHp <= 0) { //%%수정
+            if (newHp <= 0 && !this.deathHandledThisFall) { //%%수정
               this.localPlayerStats.deaths++; //%%수정
               console.log(`main.js: Local player deaths: ${this.localPlayerStats.deaths}`); // 디버그 로그 //%%수정
+              this.deathHandledThisFall = true; // 데스 처리 플래그 설정 //%%수정
               // 서버에 데스 정보 전송 (서버에서 킬/데스 관리 시 필요) //%%수정
               this.socket.emit('playerDied', { playerId: this.localPlayerId }); //%%수정
               // UI 업데이트 (스코어보드 및 개인 K/D) //%%수정
@@ -502,6 +508,9 @@ export class GameStage1 {
               ui.updateScoreboard(updatedPlayers); //%%수정
             } //%%수정
           }
+        } else {
+          this.damageTimer = 0; // 맵 안으로 들어오면 타이머 초기화
+        }
         } else {
           this.damageTimer = 0; // 맵 안으로 들어오면 타이머 초기화
         }
