@@ -1,6 +1,6 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.124/build/three.module.js';
 
-export const hp = (() => {
+export var hp = (() => { //%%수정
   class HPUI {
     constructor(scene, renderer, playerName = 'Player') {
       this.scene = scene;
@@ -38,7 +38,7 @@ export const hp = (() => {
     }
 
     drawUI() {
-      const ctx = this.context;
+      var ctx = this.context; //%%수정
       ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
       // Player Name
@@ -49,15 +49,15 @@ export const hp = (() => {
       ctx.fillText(this.playerName, this.canvas.width / 2, this.canvas.height / 4);
 
       // HP Bar Background
-      const barWidth = this.canvas.width * 0.8;
-      const barHeight = this.canvas.height / 4;
-      const barX = (this.canvas.width - barWidth) / 2;
-      const barY = this.canvas.height / 2 + 5; // Position below name
+      var barWidth = this.canvas.width * 0.8; //%%수정
+      var barHeight = this.canvas.height / 4; //%%수정
+      var barX = (this.canvas.width - barWidth) / 2; //%%수정
+      var barY = this.canvas.height / 2 + 5; // Position below name //%%수정
       ctx.fillStyle = '#555';
       ctx.fillRect(barX, barY, barWidth, barHeight);
 
       // HP Bar Fill
-      const hpWidth = (this.hp / this.maxHp) * barWidth;
+      var hpWidth = (this.hp / this.maxHp) * barWidth; //%%수정
       ctx.fillStyle = 'red';
       ctx.fillRect(barX, barY, hpWidth, barHeight);
 
@@ -71,12 +71,12 @@ export const hp = (() => {
 
     updatePosition() {
       if (this.playerMesh && this.headBone) {
-        const headWorldPosition = new THREE.Vector3();
+        var headWorldPosition = new THREE.Vector3(); //%%수정
         this.headBone.getWorldPosition(headWorldPosition);
         this.sprite.position.copy(headWorldPosition).add(this.offset);
       } else if (this.playerMesh) {
         // headBone이 없는 경우를 대비하여 기존 로직 유지 (fallback)
-        const playerWorldPosition = new THREE.Vector3();
+        var playerWorldPosition = new THREE.Vector3(); //%%수정
         this.playerMesh.getWorldPosition(playerWorldPosition);
         this.sprite.position.copy(playerWorldPosition).add(this.offset);
       }

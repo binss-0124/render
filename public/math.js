@@ -1,4 +1,4 @@
-export const math = (function() {
+export const math = (function() { //%%수정
     return {
         // 범위 내 랜덤 실수값 생성
         rand_range: function(a, b) {
@@ -7,7 +7,7 @@ export const math = (function() {
         
         // 가우시안 분포에 가까운 랜덤값
         rand_normalish: function() {
-            const r = Math.random() + Math.random() + Math.random() + Math.random();
+            const r = Math.random() + Math.random() + Math.random() + Math.random(); //%%수정
             return (r / 4.0) * 2.0 - 1;
         },
         

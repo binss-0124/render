@@ -35,6 +35,25 @@ export class UI {
         this.kdDisplay.style.letterSpacing = '1px';
         this.kdDisplay.style.display = 'none'; // 기본적으로 숨김 //%%수정
         document.body.appendChild(this.kdDisplay);
+
+        // 라운드 타이머 UI (중앙 상단) //%%수정
+        this.roundTimerDisplay = document.createElement('div'); //%%수정
+        this.roundTimerDisplay.id = 'roundTimerDisplay'; //%%수정
+        this.roundTimerDisplay.style.position = 'absolute'; //%%수정
+        this.roundTimerDisplay.style.top = '10px'; //%%수정
+        this.roundTimerDisplay.style.left = '50%'; //%%수정
+        this.roundTimerDisplay.style.transform = 'translateX(-50%)'; //%%수정
+        this.roundTimerDisplay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)'; //%%수정
+        this.roundTimerDisplay.style.color = 'white'; //%%수정
+        this.roundTimerDisplay.style.padding = '10px 20px'; //%%수정
+        this.roundTimerDisplay.style.borderRadius = '10px'; //%%수정
+        this.roundTimerDisplay.style.fontFamily = 'Impact, Arial Black, sans-serif'; //%%수정
+        this.roundTimerDisplay.style.fontSize = '36px'; //%%수정
+        this.roundTimerDisplay.style.fontWeight = 'bold'; //%%수정
+        this.roundTimerDisplay.style.letterSpacing = '2px'; //%%수정
+        this.roundTimerDisplay.style.display = 'none'; // 기본적으로 숨김 //%%수정
+        this.roundTimerDisplay.style.zIndex = '999'; //%%수정
+        document.body.appendChild(this.roundTimerDisplay); //%%수정
     }
 
     // K/D UI 토글 //%%수정
@@ -78,4 +97,28 @@ export class UI {
             this.kdDisplay.innerHTML = `K <span style="color: #00ff00;">0</span> / D <span style="color: #ff0000;">0</span>`;
         }
     }
+
+    // 라운드 타이머 시작 //%%수정
+    startRoundTimer(duration) { //%%수정
+        console.log(`ui.js: startRoundTimer called with duration: ${duration}`); // 디버그 로그 //%%수정
+        let timeLeft = duration; //%%수정
+        this.roundTimerDisplay.style.display = 'block'; // 타이머 UI 표시 //%%수정
+
+        const updateTimer = () => { //%%수정
+            const minutes = Math.floor(timeLeft / 60); //%%수정
+            const seconds = timeLeft % 60; //%%수정
+            this.roundTimerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`; //%%수정
+
+            if (timeLeft <= 0) { //%%수정
+                clearInterval(this.timerInterval); // 타이머 중지 //%%수정
+                this.roundTimerDisplay.textContent = "시간 종료!"; //%%수정
+                // 시간 종료 시 추가 동작 (예: 게임 종료, 라운드 종료 등) //%%수정
+            } else { //%%수정
+                timeLeft--; //%%수정
+            } //%%수정
+        }; //%%수정
+
+        updateTimer(); // 즉시 업데이트하여 초기 시간 표시 //%%수정
+        this.timerInterval = setInterval(updateTimer, 1000); // 1초마다 업데이트 //%%수정
+    } //%%수정
 }

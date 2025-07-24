@@ -13,7 +13,8 @@ const ui = new UI(); // UI 인스턴스 생성 추가 //%%수정
 console.log('main.js: UI instance created'); // 디버그 로그 추가 //%%수정
 
 export class GameStage1 {
-  constructor(socket, players, map, spawnedWeapons, localPlayerId) { // localPlayerId 매개변수 추가
+  constructor(socket, players, map, spawnedWeapons, localPlayerId, roundDuration) { // localPlayerId, roundDuration 매개변수 추가 //%%수정
+    console.log(`[Main] GameStage1 constructor: received roundDuration = ${roundDuration}`); //%%수정
     console.log('main.js: GameStage1 constructor called'); // 디버그 로그 추가 //%%수정
     this.socket = socket;
     this.players = {}; // To store other players' objects
@@ -22,6 +23,7 @@ export class GameStage1 {
     this.map = map;
     this.spawnedWeapons = spawnedWeapons; // Store spawned weapons data
     this.spawnedWeaponObjects = []; // Store actual Weapon instances
+    this.roundDuration = roundDuration; // 라운드 시간 저장 //%%수정
 
     // 로컬 플레이어의 킬/데스 정보 초기화 //%%수정
     const initialLocalPlayerInfo = this.playerInfo.find(p => p.id === this.localPlayerId); //%%수정
@@ -29,13 +31,13 @@ export class GameStage1 {
       kills: initialLocalPlayerInfo ? initialLocalPlayerInfo.kills : 0, //%%수정
       deaths: initialLocalPlayerInfo ? initialLocalPlayerInfo.deaths : 0 //%%수정
     }; //%%수정
-    this.deathHandledThisFall = false; // 낙사 데스 중복 방지 플래그 //%%수정
 
     this.Initialize();
     this.RAF();
     this.SetupSocketEvents();
     ui.toggleKDDisplay(true); // 게임 시작 시 K/D UI 표시 //%%수정
     console.log('main.js: ui.toggleKDDisplay(true) called'); // 디버그 로그 추가 //%%수정
+    ui.startRoundTimer(this.roundDuration); // 라운드 타이머 시작 //%%수정
   }
 
   async Initialize() {
@@ -371,10 +373,6 @@ export class GameStage1 {
         } else if (data.hp > 0 && targetPlayer.isDead_) { // 리스폰
           targetPlayer.isDead_ = false;
           targetPlayer.Respawn_(); // Respawn_ 함수 호출하여 상태 및 위치 재설정
-          if (data.playerId === this.localPlayerId) { // 로컬 플레이어 리스폰 시 플래그 재설정 //%%수정
-            this.deathHandledThisFall = false; //%%수정
-            console.log('main.js: Local player respawned, deathHandledThisFall reset.'); // 디버그 로그 //%%수정
-          } //%%수정
         } else if (data.hp < oldHp) { // HP가 실제로 감소했을 때만 피격 효과 트리거
           // 로컬 플레이어인 경우 피격 효과 (빨간 화면) 트리거
           if (data.playerId === this.localPlayerId && targetPlayer.hitEffect) {
@@ -489,10 +487,9 @@ export class GameStage1 {
             this.damageTimer = 0;
 
             // 낙사로 HP가 0 이하가 되면 데스 카운트 증가 및 UI 업데이트 //%%수정
-            if (newHp <= 0 && !this.deathHandledThisFall) { //%%수정
+            if (newHp <= 0) { //%%수정
               this.localPlayerStats.deaths++; //%%수정
               console.log(`main.js: Local player deaths: ${this.localPlayerStats.deaths}`); // 디버그 로그 //%%수정
-              this.deathHandledThisFall = true; // 데스 처리 플래그 설정 //%%수정
               // 서버에 데스 정보 전송 (서버에서 킬/데스 관리 시 필요) //%%수정
               this.socket.emit('playerDied', { playerId: this.localPlayerId }); //%%수정
               // UI 업데이트 (스코어보드 및 개인 K/D) //%%수정
@@ -508,9 +505,6 @@ export class GameStage1 {
               ui.updateScoreboard(updatedPlayers); //%%수정
             } //%%수정
           }
-        } else {
-          this.damageTimer = 0; // 맵 안으로 들어오면 타이머 초기화
-        }
         } else {
           this.damageTimer = 0; // 맵 안으로 들어오면 타이머 초기화
         }
@@ -687,6 +681,7 @@ document.addEventListener('characterSelected', (event) => {
 
   // 방 생성 또는 참가 로직 분기
   if (roomSettings.map) { // 방 생성 흐름
+    console.log(`[Main] Emitting createRoom event with roomSettings.roundTime = ${roomSettings.roundTime}`); //%%수정
     socket.emit('createRoom', { ...roomSettings, nickname: nickname, character: character });
     roomSettings = {}; // Reset room settings after use
   } else if (joinRoomId) { // 방 참가 흐름
@@ -821,9 +816,10 @@ socket.on('updatePlayers', (players, maxPlayers) => {
 });
 
 socket.on('startGame', (gameInfo) => {
+  console.log(`[Main] Received startGame event. gameInfo.roundDuration = ${gameInfo.roundDuration}`); //%%수정
   waitingRoom.style.display = 'none';
   controls.style.display = 'block';
-  new GameStage1(socket, gameInfo.players, gameInfo.map, gameInfo.spawnedWeapons, socket.id); // socket.id 전달 //%%수정
+  new GameStage1(socket, gameInfo.players, gameInfo.map, gameInfo.spawnedWeapons, socket.id, gameInfo.roundDuration); // socket.id, roundDuration 전달 //%%수정
 });
 
 socket.on('roomError', (message) => {

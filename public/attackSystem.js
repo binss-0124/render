@@ -21,7 +21,7 @@ export class AttackSystem {
     radius = 3, // 판정 반경
     speed // 투사체 속도 (원거리 무기용)
   }) {
-    const projectile = new MeleeProjectile({
+    var projectile = new MeleeProjectile({ //%%수정
       scene: this.scene,
       position,
       direction,
@@ -40,9 +40,9 @@ export class AttackSystem {
   // 매 프레임마다 호출 (game loop에서)
   update(delta, players, npcs) {
     this.projectiles = this.projectiles.filter(p => !p.isDestroyed);
-    for (const projectile of this.projectiles) {
+    for (var projectile of this.projectiles) { //%%수정
       // 공격자와 같은 대상은 제외하고, 유효한 mesh_를 가진 다른 플레이어와 NPC를 대상으로 충돌 검사
-      const allTargets = [...Object.values(players).filter(p => p.mesh_ && p !== projectile.attacker), ...npcs.filter(n => n.model_ && n !== projectile.attacker)];
+      var allTargets = [...Object.values(players).filter(p => p.mesh_ && p !== projectile.attacker), ...npcs.filter(n => n.model_ && n !== projectile.attacker)]; //%%수정
       projectile.update(delta, allTargets);
     }
   }
