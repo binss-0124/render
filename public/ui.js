@@ -59,7 +59,7 @@ export class UI {
 
     // 해골 아이콘 (킬 표시)
     const skullIcon = document.createElement('img');
-    skullIcon.src = `./resources/skull_icon.png`; // 해골 아이콘 경로 (추후 추가 필요)
+    skullIcon.src = `./resources/knife_icon.png`; // 해골 아이콘 경로 (추후 추가 필요)
     skullIcon.style.width = '25px'; // 아이콘 크기 증가
     skullIcon.style.height = '25px';
     skullIcon.style.margin = '0 8px'; // 마진 증가
