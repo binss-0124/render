@@ -6,10 +6,8 @@ import { math } from './math.js';
 import { hp } from './hp.js'; // hp.js 임포트
 import { WEAPON_DATA, loadWeaponData, spawnWeaponOnMap } from './weapon.js';
 import { AttackSystem } from './attackSystem.js';
-import { UI } from './ui.js'; //**수정 UI 임포트
 
 const socket = io();
-const ui = new UI(); //**수정 UI 인스턴스 생성
 
 export class GameStage1 {
   constructor(socket, players, map, spawnedWeapons) {
@@ -67,7 +65,6 @@ export class GameStage1 {
 
     window.addEventListener('resize', () => this.OnWindowResize(), false);
     document.addEventListener('keydown', (e) => this._OnKeyDown(e), false);
-    document.addEventListener('keyup', (e) => this._OnKeyUp(e), false); //**수정 KeyUp 이벤트 리스너 추가
   }
 
   SetupLighting() {
@@ -409,20 +406,7 @@ export class GameStage1 {
           this.socket.emit('playerAttack', attackAnimation); // 서버에 공격 애니메이션 정보 전송
         }
         break;
-      case 9: // Tab key //**수정
-        event.preventDefault(); //**수정 기본 동작 방지 (예: 포커스 이동) //**수정
-        ui.toggleScoreboard(true); //**수정 스코어보드 표시 //**수정
-        break; //**수정
     }
-  }
-
-  _OnKeyUp(event) { //**수정
-    switch (event.keyCode) { //**수정
-      case 9: // Tab key //**수정
-        event.preventDefault(); //**수정 기본 동작 방지 //**수 수정
-        ui.toggleScoreboard(false); //**수정 스코어보드 숨김 //**수정
-        break; //**수정
-    } //**수정
   }
 
   RAF(time) {
@@ -526,7 +510,6 @@ const currentMapImage = document.getElementById('currentMapImage');
 const mapPlaceholderText = document.getElementById('mapPlaceholderText');
 
 function updatePlayers(players, maxPlayers) {
-  ui.updateScoreboard(players); //**수정 스코어보드 업데이트
   playerSlotsContainer.innerHTML = '';
   const totalSlots = 8; // Always show 8 slots
 

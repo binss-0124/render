@@ -19,9 +19,7 @@ function updateRoomPlayers(roomId) {
       id: p.id,
       nickname: p.nickname, // Add nickname
       ready: p.ready,
-      character: p.character, // Add character
-      kills: p.kills, //**수정 Add kills
-      deaths: p.deaths //**수정 Add deaths
+      character: p.character // Add character
     }));
     io.to(roomId).emit('updatePlayers', playersData, rooms[roomId].maxPlayers);
   }
@@ -55,7 +53,7 @@ io.on('connection', (socket) => {
 
     rooms[roomId] = {
       id: roomId,
-      players: [{ id: socket.id, ready: false, nickname: nickname, character: character, equippedWeapon: null, isAttacking: false, hp: 100, kills: 0, deaths: 0 }], //**수정 Store nickname, character, equippedWeapon, attacking state, HP, kills, and deaths
+      players: [{ id: socket.id, ready: false, nickname: nickname, character: character, equippedWeapon: null, isAttacking: false, hp: 100 }], // Store nickname, character, equippedWeapon, attacking state, and HP
       gameState: {},
       map: map,
       maxPlayers: maxPlayers,
@@ -94,7 +92,7 @@ io.on('connection', (socket) => {
         return;
       }
       socket.join(roomId);
-      rooms[roomId].players.push({ id: socket.id, ready: false, nickname: nickname, character: character, equippedWeapon: null, isAttacking: false, hp: 100, kills: 0, deaths: 0 }); //**수정 Store nickname, character, equippedWeapon, attacking state, HP, kills, and deaths
+      rooms[roomId].players.push({ id: socket.id, ready: false, nickname: nickname, character: character, equippedWeapon: null, isAttacking: false, hp: 100 }); // Store nickname, character, equippedWeapon, attacking state, and HP
       socket.roomId = roomId;
       console.log(`${socket.id} joined room: ${roomId}`);
       socket.emit('roomJoined', { id: roomId, name: rooms[roomId].name, map: rooms[roomId].map });
@@ -249,13 +247,11 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('playerDamage', (data) => { //**수정
-    console.log(`[Server] Received playerDamage: targetId=${data.targetId}, damage=${data.damage}, attackerId=${data.attackerId}`); //**수정
+  socket.on('playerDamage', (data) => {
+    console.log(`[Server] Received playerDamage: targetId=${data.targetId}, damage=${data.damage}`);
     if (socket.roomId && rooms[socket.roomId]) {
       const room = rooms[socket.roomId];
       const targetPlayer = room.players.find(p => p.id === data.targetId);
-      const attackerPlayer = room.players.find(p => p.id === data.attackerId); //**수정
-
       if (targetPlayer) {
         console.log(`[Server] Target player found: ${targetPlayer.nickname} (HP: ${targetPlayer.hp})`);
         targetPlayer.hp -= data.damage;
@@ -267,16 +263,9 @@ io.on('connection', (socket) => {
         console.log(`[Server] Emitted hpUpdate: playerId=${targetPlayer.id}, hp=${targetPlayer.hp}`);
 
         if (targetPlayer.hp === 0) {
-          // 사망 처리
+          // 사망 처리 (필요하다면 추가 로직)
           console.log(`${targetPlayer.nickname} (${targetPlayer.id}) has been defeated!`);
-          targetPlayer.deaths++; //**수정
-          if (attackerPlayer) { //**수정
-            attackerPlayer.kills++; //**수정
-            console.log(`${attackerPlayer.nickname} (${attackerPlayer.id}) killed ${targetPlayer.nickname}!`); //**수정
-          }
           // 리스폰 로직은 클라이언트에서 처리
-          // K/D 업데이트를 위해 모든 플레이어 정보 브로드캐스트 //**수정
-          updateRoomPlayers(socket.roomId); //**수정
         }
       } else {
         console.log(`[Server] Target player ${data.targetId} not found in room ${socket.roomId}`);
