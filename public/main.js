@@ -4,40 +4,25 @@ import { player } from './player.js';
 import { object } from './object.js';
 import { math } from './math.js';
 import { hp } from './hp.js'; // hp.js 임포트
-import { WEAPON_DATA, loadWeaponData, spawnWeaponOnMap } from './weapon.js';
+import { WEAPON_DATA, loadWeaponData, spawnWeaponOnMap, getRandomWeaponName } from './weapon.js';
 import { AttackSystem } from './attackSystem.js';
-import { UI } from './ui.js'; // UI 임포트 추가 //%%수정
 
 const socket = io();
-const ui = new UI(); // UI 인스턴스 생성 추가 //%%수정
-console.log('main.js: UI instance created'); // 디버그 로그 추가 //%%수정
 
 export class GameStage1 {
-  constructor(socket, players, map, spawnedWeapons, localPlayerId, roundDuration) { // localPlayerId, roundDuration 매개변수 추가 //%%수정
-    console.log(`[Main] GameStage1 constructor: received roundDuration = ${roundDuration}`); //%%수정
-    console.log('main.js: GameStage1 constructor called'); // 디버그 로그 추가 //%%수정
+  constructor(socket, players, map, spawnedWeapons) {
     this.socket = socket;
     this.players = {}; // To store other players' objects
-    this.localPlayerId = localPlayerId; // localPlayerId 설정
+    this.localPlayerId = socket.id;
     this.playerInfo = players;
     this.map = map;
     this.spawnedWeapons = spawnedWeapons; // Store spawned weapons data
     this.spawnedWeaponObjects = []; // Store actual Weapon instances
-    this.roundDuration = roundDuration; // 라운드 시간 저장 //%%수정
 
-    // 로컬 플레이어의 킬/데스 정보 초기화 //%%수정
-    const initialLocalPlayerInfo = this.playerInfo.find(p => p.id === this.localPlayerId); //%%수정
-    this.localPlayerStats = { //%%수정
-      kills: initialLocalPlayerInfo ? initialLocalPlayerInfo.kills : 0, //%%수정
-      deaths: initialLocalPlayerInfo ? initialLocalPlayerInfo.deaths : 0 //%%수정
-    }; //%%수정
-
-    this.Initialize();
-    this.RAF();
-    this.SetupSocketEvents();
-    ui.toggleKDDisplay(true); // 게임 시작 시 K/D UI 표시 //%%수정
-    console.log('main.js: ui.toggleKDDisplay(true) called'); // 디버그 로그 추가 //%%수정
-    ui.startRoundTimer(this.roundDuration); // 라운드 타이머 시작 //%%수정
+    this.Initialize().then(() => {
+      this.RAF();
+      this.SetupSocketEvents();
+    }); //%%수정됨
   }
 
   async Initialize() {
@@ -81,7 +66,7 @@ export class GameStage1 {
 
     window.addEventListener('resize', () => this.OnWindowResize(), false);
     document.addEventListener('keydown', (e) => this._OnKeyDown(e), false);
-    document.addEventListener('keyup', (e) => this._OnKeyUp(e), false); // KeyUp 이벤트 리스너 추가 //%%수정
+    document.addEventListener('keyup', (e) => this._OnKeyUp(e), false);
   }
 
   SetupLighting() {
@@ -339,7 +324,7 @@ export class GameStage1 {
     this.socket.on('weaponSpawned', (weaponData) => {
       const weapon = spawnWeaponOnMap(this.scene, weaponData.weaponName, weaponData.x, weaponData.y, weaponData.z, weaponData.uuid);
       this.spawnedWeaponObjects.push(weapon);
-      console.log(`New weapon ${weaponData.weaponName} spawned at (${weaponData.x}, ${weaponData.y}, ${weaponData.z}). Total: ${this.spawnedWeaponObjects.length}`);
+      console.log(`Weapon ${weaponData.uuid} spawned on scene.`);
     });
 
     this.socket.on('playerAttack', (data) => {
@@ -363,6 +348,7 @@ export class GameStage1 {
           targetPlayer.isDead_ = true;
           targetPlayer.SetAnimation_('Death');
           if (data.playerId === this.localPlayerId) { // 로컬 플레이어인 경우에만 사망 UI 및 타이머 트리거
+            this.socket.emit('playerKilled', { victimId: data.playerId, attackerId: data.attackerId });
             targetPlayer.DisableInput_();
             targetPlayer.respawnTimer_ = targetPlayer.respawnDelay_;
             if (targetPlayer.overlay) {
@@ -391,7 +377,10 @@ export class GameStage1 {
   }
 
   _OnKeyDown(event) {
-    console.log(`_OnKeyDown: ${event.keyCode}`); // 디버그 로그 추가 //%%수정
+    if (event.code === 'Tab') {
+        event.preventDefault();
+        document.getElementById('scoreboard').style.display = 'block';
+    }
     switch (event.keyCode) {
       case 69: // E key
         if (this.player_ && this.player_.mesh_) {
@@ -408,6 +397,22 @@ export class GameStage1 {
                 this.player_.EquipWeapon(weapon.weaponName); // Equip the weapon
                 this.socket.emit('weaponEquipped', weapon.weaponName); // 서버에 무기 장착 정보 전송
                 pickedUp = true;
+
+                // 새로운 무기 스폰 로직 추가
+                const newWeaponName = getRandomWeaponName();
+                if (newWeaponName) {
+                  const newSpawnPosition = this.getRandomPosition();
+                  const newWeaponUuid = THREE.MathUtils.generateUUID(); // 새로운 무기 UUID 생성
+                  const newWeapon = spawnWeaponOnMap(this.scene, newWeaponName, newSpawnPosition.x, newSpawnPosition.y, newSpawnPosition.z, newWeaponUuid);
+                  this.spawnedWeaponObjects.push(newWeapon);
+                  this.socket.emit('weaponSpawned', {
+                    weaponName: newWeaponName,
+                    x: newSpawnPosition.x,
+                    y: newSpawnPosition.y,
+                    z: newSpawnPosition.z,
+                    uuid: newWeaponUuid
+                  });
+                }
                 break;
               }
             }
@@ -430,21 +435,13 @@ export class GameStage1 {
           this.socket.emit('playerAttack', attackAnimation); // 서버에 공격 애니메이션 정보 전송
         }
         break;
-      case 9: // Tab key //%%수정
-        event.preventDefault(); // 기본 동작 방지 (예: 포커스 이동) //%%수정
-        ui.toggleScoreboard(true); // 스코어보드 표시 //%%수정
-        break; //%%수정
     }
   }
 
-  _OnKeyUp(event) { //%%수정
-    console.log(`_OnKeyUp: ${event.keyCode}`); // 디버그 로그 추가 //%%수정
-    switch (event.keyCode) { //%%수정
-      case 9: // Tab key //%%수정
-        event.preventDefault(); // 기본 동작 방지 //%%수정
-        ui.toggleScoreboard(false); // 스코어보드 숨김 //%%수정
-        break; //%%수정
-    } //%%수정
+  _OnKeyUp(event) {
+    if (event.code === 'Tab') {
+        document.getElementById('scoreboard').style.display = 'none';
+    }
   }
 
   RAF(time) {
@@ -471,43 +468,21 @@ export class GameStage1 {
 
       // 맵 경계 체크 및 데미지 적용
       const playerPos = this.player_.mesh_.position;
-      if (this.mapBounds) { // mapBounds가 정의되었는지 확인 //%%수정
-        if (
-          playerPos.x < this.mapBounds.minX ||
-          playerPos.x > this.mapBounds.maxX ||
-          playerPos.z < this.mapBounds.minZ ||
-          playerPos.z > this.mapBounds.maxZ
-        ) {
-          this.damageTimer += delta;
-          if (this.damageTimer >= this.damageInterval) {
-            const newHp = this.player_.hp_ - this.damageAmount;
-            this.player_.TakeDamage(newHp); // TakeDamage 함수에 새로운 HP 값 전달
-            this.player_.hp_ = newHp; // 실제 HP 값 업데이트
-            this.player_.hpUI.updateHP(newHp); // HP UI 업데이트
-            this.damageTimer = 0;
-
-            // 낙사로 HP가 0 이하가 되면 데스 카운트 증가 및 UI 업데이트 //%%수정
-            if (newHp <= 0) { //%%수정
-              this.localPlayerStats.deaths++; //%%수정
-              console.log(`main.js: Local player deaths: ${this.localPlayerStats.deaths}`); // 디버그 로그 //%%수정
-              // 서버에 데스 정보 전송 (서버에서 킬/데스 관리 시 필요) //%%수정
-              this.socket.emit('playerDied', { playerId: this.localPlayerId }); //%%수정
-              // UI 업데이트 (스코어보드 및 개인 K/D) //%%수정
-              // 현재 플레이어 목록을 가져와서 업데이트해야 함. 여기서는 임시로 로컬 스탯만 반영 //%%수정
-              // 실제 게임에서는 서버로부터 업데이트된 전체 플레이어 목록을 받아와야 함 //%%수정
-              const updatedPlayers = this.playerInfo.map(p => { //%%수정
-                if (p.id === this.localPlayerId) { //%%수정
-                  return { ...p, deaths: this.localPlayerStats.deaths }; //%%수정
-                } //%%수정
-                return p; //%%수정
-              }); //%%수정
-              ui.updateKD(this.localPlayerId, updatedPlayers); //%%수정
-              ui.updateScoreboard(updatedPlayers); //%%수정
-            } //%%수정
+      if (
+        playerPos.x < this.mapBounds.minX ||
+        playerPos.x > this.mapBounds.maxX ||
+        playerPos.z < this.mapBounds.minZ ||
+        playerPos.z > this.mapBounds.maxZ
+      ) {
+        this.damageTimer += delta;
+        if (this.damageTimer >= this.damageInterval) {
+          if (!this.player_.isDead_) { // 플레이어가 죽은 상태가 아닐 때만 데미지 적용
+            this.socket.emit('playerDamage', { targetId: this.localPlayerId, damage: this.damageAmount });
           }
-        } else {
-          this.damageTimer = 0; // 맵 안으로 들어오면 타이머 초기화
+          this.damageTimer = 0;
         }
+      } else {
+        this.damageTimer = 0; // 맵 안으로 들어오면 타이머 초기화
       }
 
       // HP UI 업데이트
@@ -681,7 +656,6 @@ document.addEventListener('characterSelected', (event) => {
 
   // 방 생성 또는 참가 로직 분기
   if (roomSettings.map) { // 방 생성 흐름
-    console.log(`[Main] Emitting createRoom event with roomSettings.roundTime = ${roomSettings.roundTime}`); //%%수정
     socket.emit('createRoom', { ...roomSettings, nickname: nickname, character: character });
     roomSettings = {}; // Reset room settings after use
   } else if (joinRoomId) { // 방 참가 흐름
@@ -807,8 +781,6 @@ socket.on('roomJoined', (roomInfo) => {
 
 socket.on('updatePlayers', (players, maxPlayers) => {
   updatePlayers(players, maxPlayers);
-  ui.updateScoreboard(players); // 스코어보드 업데이트 추가 //%%수정
-  ui.updateKD(socket.id, players); // K/D 업데이트 추가 //%%수정
   if (isRoomCreator) {
     const allReady = players.every(p => p.ready);
     startGameButton.disabled = !allReady;
@@ -816,10 +788,91 @@ socket.on('updatePlayers', (players, maxPlayers) => {
 });
 
 socket.on('startGame', (gameInfo) => {
-  console.log(`[Main] Received startGame event. gameInfo.roundDuration = ${gameInfo.roundDuration}`); //%%수정
   waitingRoom.style.display = 'none';
   controls.style.display = 'block';
-  new GameStage1(socket, gameInfo.players, gameInfo.map, gameInfo.spawnedWeapons, socket.id, gameInfo.roundDuration); // socket.id, roundDuration 전달 //%%수정
+  document.getElementById('gameUiContainer').style.display = 'block';
+  const gameStartCountdown = document.getElementById('gameStartCountdown');
+  let count = 3;
+  gameStartCountdown.textContent = `잠시 후 게임이 시작됩니다... ${count}`;
+  const countdownInterval = setInterval(() => {
+    count--;
+    gameStartCountdown.textContent = `잠시 후 게임이 시작됩니다... ${count}`;
+    if (count === 0) {
+      clearInterval(countdownInterval);
+      gameStartCountdown.style.display = 'none';
+      socket.emit('gameStart'); // 게임 시작 이벤트 서버로 전송 //%%수정됨
+      new GameStage1(socket, gameInfo.players, gameInfo.map, gameInfo.spawnedWeapons);
+    }
+  }, 1000);
+});
+
+socket.on('updateTimer', (time) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = time % 60;
+    const timerElement = document.getElementById('timer'); //%%수정됨
+    if (timerElement) { //%%수정됨
+        timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        timerElement.style.display = 'block'; // 타이머를 보이도록 설정 //%%수정됨
+    } //%%수정됨
+});
+
+socket.on('updateScores', (scores) => {
+    const scoreboardBody = document.querySelector('#scoreboardTable tbody');
+    scoreboardBody.innerHTML = '';
+    scores.forEach(player => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td style="padding: 10px;">${player.nickname}</td>
+            <td style="padding: 10px;">${player.kills}</td>
+            <td style="padding: 10px;">${player.deaths}</td>
+        `;
+        scoreboardBody.appendChild(row);
+    });
+});
+
+socket.on('killFeed', (data) => {
+    const killFeed = document.getElementById('killFeed');
+    const killMessage = document.createElement('div');
+    killMessage.textContent = `${data.attackerName} killed ${data.victimName}`;
+    killMessage.style.color = 'white';
+    killMessage.style.marginBottom = '5px';
+    killFeed.appendChild(killMessage);
+    setTimeout(() => {
+        killFeed.removeChild(killMessage);
+    }, 5000);
+});
+
+socket.on('gameEnd', (finalScores) => {
+    const gameEndScreen = document.getElementById('gameEndScreen');
+    const finalScoreboard = document.getElementById('finalScoreboard');
+    const finalScoreboardTable = document.createElement('table');
+    finalScoreboardTable.style.color = 'white';
+    finalScoreboardTable.style.width = '400px';
+    finalScoreboardTable.style.borderCollapse = 'collapse';
+    finalScoreboardTable.innerHTML = `
+        <thead>
+            <tr>
+                <th style="padding: 10px; border-bottom: 1px solid white;">Player</th>
+                <th style="padding: 10px; border-bottom: 1px solid white;">Kills</th>
+                <th style="padding: 10px; border-bottom: 1px solid white;">Deaths</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${finalScores.map(player => `
+                <tr>
+                    <td style="padding: 10px;">${player.nickname}</td>
+                    <td style="padding: 10px;">${player.kills}</td>
+                    <td style="padding: 10px;">${player.deaths}</td>
+                </tr>
+            `).join('')}
+        </tbody>
+    `;
+    finalScoreboard.innerHTML = '';
+    finalScoreboard.appendChild(finalScoreboardTable);
+    gameEndScreen.style.display = 'flex';
+    document.getElementById('backToLobbyButton').addEventListener('click', () => {
+        window.location.reload();
+    });
 });
 
 socket.on('roomError', (message) => {

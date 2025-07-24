@@ -11,9 +11,9 @@ export class MeleeProjectile {
     this.attacker = attacker;
     this.onHit = onHit;
     this.speed = (speed !== undefined) ? speed : (weapon.projectileSpeed !== undefined ? weapon.projectileSpeed : 20);
-    this.range = weapon.range || weapon.attackRadius || 2.0;
+    this.range = weapon.range || weapon.attackRadius || 20.0;
     this.traveled = 0;
-    this.radius = (weapon.projectileSize !== undefined) ? weapon.projectileSize : (radius || weapon.radius || 3);
+    this.radius = (weapon.projectileSize !== undefined) ? weapon.projectileSize : (radius || weapon.radius || 0.3);
     this.angle = angle || weapon.angle || Math.PI / 2;
     this.type = type;
     this.isDestroyed = false;
@@ -27,6 +27,11 @@ export class MeleeProjectile {
   }
 
   createDebugMesh() {
+    // 근접 공격(sector, aerial)의 디버그 메시는 생성하지 않음
+    if (this.type === 'sector' || this.type === 'aerial') {
+      return null;
+    }
+
     let color = 0xff0000; // 기본 빨간색
     let geometry;
 
@@ -134,9 +139,11 @@ export class MeleeProjectile {
     }
 
     // 원거리(circle) 타입 이동 및 판정
-    const moveDist = this.speed * delta;
-    this.position.addScaledVector(this.direction, moveDist);
-    this.traveled += moveDist;
+    if (this.type === 'circle') {
+      const moveDist = this.speed * delta;
+      this.position.addScaledVector(this.direction, moveDist);
+      this.traveled += moveDist;
+    }
 
     for (const target of targets) {
       // 공격자와 같은 대상은 타격하지 않음

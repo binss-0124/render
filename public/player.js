@@ -153,10 +153,11 @@ export const player = (() => {
       // 사망 처리 (HP가 0이 되었을 때만)
       if (newHp === 0 && !this.isDead_) {
         this.isDead_ = true; // 죽음 상태로 설정
+        this.isAttacking_ = false; // 공격 중단
         this.SetAnimation_('Death'); // Death 애니메이션 재생
         if (!this.params_.isRemote) {
           this.DisableInput_(); // 키 입력 비활성화
-          this.respawnTimer_ = this.respawnDelay_; // 리스폰 타이머 초기화
+          this.respawnTimer_ = this.respawnDelay_;
 
           if (this.overlay) {
             this.overlay.style.visibility = 'visible';
@@ -186,7 +187,7 @@ export const player = (() => {
     }
 
     OnKeyDown_(event) {
-      if (this.hp_ <= 0) return; // 죽었으면 입력 무시
+      if (this.isDead_) return; // 죽었으면 입력 무시
       switch (event.code) {
         case 'KeyW': this.keys_.forward = true; break;
         case 'KeyS': this.keys_.backward = true; break;
@@ -208,6 +209,20 @@ export const player = (() => {
             this.animations_['Roll'] &&
             this.rollCooldownTimer_ <= 0
           ) {
+            // 공격 중 구르기 시 공격 취소
+            if (this.isAttacking_) {
+              this.isAttacking_ = false;
+              // 진행 중인 공격 애니메이션의 콜백 제거
+              if (this.onAnimationFinished_) {
+                this.mixer_.removeEventListener('finished', this.onAnimationFinished_);
+                this.onAnimationFinished_ = null;
+              }
+              // 현재 공격 애니메이션을 빠르게 페이드 아웃
+              if (this.currentAction_) {
+                this.currentAction_.fadeOut(0.1);
+              }
+            }
+
             this.isRolling_ = true;
             this.rollTimer_ = this.rollDuration_;
             const moveDir = new THREE.Vector3();
@@ -251,7 +266,7 @@ export const player = (() => {
     }
 
     OnKeyUp_(event) {
-      if (this.hp_ <= 0) return; // 죽었으면 입력 무시
+      if (this.isDead_) return; // 죽었으면 입력 무시
       switch (event.code) {
         case 'KeyW': this.keys_.forward = false; break;
         case 'KeyS': this.keys_.backward = false; break;
@@ -317,7 +332,28 @@ export const player = (() => {
 
     SetAnimation_(name) {
       if (this.currentAnimationName_ === name) return;
-      if (this.isDead_ && name !== 'Death') return;
+      if (name === 'Death') { // Death 애니메이션은 항상 재생
+        this.currentAnimationName_ = name;
+        if (this.currentAction_) {
+          this.currentAction_.fadeOut(0.3);
+        }
+        const newAction = this.animations_[name];
+        if (newAction) {
+          this.currentAction_ = newAction;
+          this.currentAction_.reset().fadeIn(0.3).play();
+          this.currentAction_.setLoop(THREE.LoopOnce);
+          this.currentAction_.clampWhenFinished = true;
+        } else {
+          console.warn(`Animation "${name}" not found for character. Falling back to Idle.`);
+          this.currentAction_ = this.animations_['Idle']; // Fallback to Idle
+          if (this.currentAction_) {
+            this.currentAction_.reset().fadeIn(0.3).play();
+          }
+          this.currentAnimationName_ = 'Idle'; // Update current animation name to Idle
+        }
+        return;
+      }
+      if (this.isDead_) return; // 죽은 상태에서는 Death 애니메이션 외 다른 애니메이션 재생 방지
       if (this.isAttacking_ && name !== 'SwordSlash' && name !== 'Shoot_OneHanded') return; // 공격 중에는 다른 애니메이션 재생 방지
 
       this.currentAnimationName_ = name;
@@ -363,6 +399,8 @@ export const player = (() => {
       }
       this.InitInput_(); // 입력 활성화
       this.SetAnimation_('Idle'); // Idle 애니메이션으로 설정
+      this.UnequipWeapon(); // 무기 장착 해제
+      this.equippedWeaponData_ = null; // 장착된 무기 데이터 초기화
       if (this.params_.getRespawnPosition) {
         const respawnPosition = this.params_.getRespawnPosition();
         this.SetPosition([respawnPosition.x, respawnPosition.y, respawnPosition.z]);
@@ -434,6 +472,7 @@ export const player = (() => {
     }
 
     PlayAttackAnimation(animationName) {
+      if (this.isDead_) return; // 죽은 상태에서는 공격 불가
       if (this.isAttacking_) return; // 이미 공격 중이면 무시
 
       this.isAttacking_ = true;
@@ -450,28 +489,41 @@ export const player = (() => {
 
         // 공격 판정 발생 시점 (애니메이션에 따라 조절 필요)
         // 예: SwordSlash 애니메이션의 0.2초 지점에서 공격 판정
-        if (this.equippedWeaponData_ && this.attackSystem_) {
-          const attackDelay = 0.2; // 공격 판정 발생까지의 딜레이 (초)
+        if (this.attackSystem_) {
+          let actualAttackDelay = 0.2; // 기본값 (원거리)
+          if (this.equippedWeaponData_ && this.equippedWeaponData_.type === 'melee') {
+              actualAttackDelay = 0.4; // 근접 무기
+          } else if (!this.equippedWeaponData_) { // 맨손 공격
+              actualAttackDelay = 0.4;
+          }
+
           setTimeout(() => {
             if (!this.isAttacking_) return; // 공격이 취소되었으면 실행하지 않음
 
-            const weapon = this.equippedWeaponData_;
+            let weapon = this.equippedWeaponData_; // 현재 장착된 무기 데이터
+            if (!weapon) { // 무기가 장착되지 않았을 경우 기본 맨손 공격 설정
+              weapon = {
+                name: 'Fist',
+                type: 'melee',
+                damage: 10,
+                radius: 1.5, // Dagger.fbx와 동일한 범위
+                angle: 1.5707963267948966, // Dagger.fbx와 동일한 범위
+                projectileSize: 0.5, // 원거리 무기용 (맨손 공격에는 사용되지 않음)
+                projectileSpeed: 20, // 원거리 무기용 (맨손 공격에는 사용되지 않음)
+              };
+            }
             const attacker = this; // 공격자 자신
 
-            // 무기 끝 위치 계산 (대략적인 위치)
+            // 공격 위치를 항상 플레이어의 중앙으로 설정
             const attackPosition = new THREE.Vector3();
-            if (this.currentWeaponModel) {
-              this.currentWeaponModel.getWorldPosition(attackPosition);
-            } else {
-              // 무기가 없으면 플레이어 전방에서 공격
-              this.mesh_.getWorldPosition(attackPosition);
-              attackPosition.y += 1.0; // 플레이어 높이 고려
-            }
+            this.mesh_.getWorldPosition(attackPosition);
+            attackPosition.y += 1.5; // 캐릭터의 가슴 높이 정도로 조정
 
             // 공격 방향 계산 (플레이어의 현재 바라보는 방향)
             const attackDirection = new THREE.Vector3();
             this.mesh_.getWorldDirection(attackDirection);
             attackDirection.negate(); // 모델의 Z축이 반대 방향이므로 뒤집음
+            attackDirection.applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI); // Y축 기준으로 180도 회전
 
             if (weapon.type === 'melee') {
               this.attackSystem_.spawnMeleeProjectile({
@@ -481,12 +533,12 @@ export const player = (() => {
                 attacker: attacker,
                 type: 'sector',
                 angle: weapon.angle,
-                radius: weapon.radius,
+                radius: weapon.radius + 1,
                 onHit: (target) => {
                   console.log(`${attacker.nickname_} hit ${target.nickname_ || 'NPC'} with ${weapon.name}!`);
                   if (this.socket_ && target.params_.isRemote) { // 원격 플레이어에게만 데미지 이벤트 전송
-                    console.log(`[Player] Emitting playerDamage: targetId=${target.params_.playerId}, damage=${weapon.damage}, attackerId=${attacker.socket_.id}`); //**수정 attackerId 추가
-                    this.socket_.emit('playerDamage', { targetId: target.params_.playerId, damage: weapon.damage, attackerId: attacker.socket_.id }); //**수정 attackerId 추가
+                    console.log(`[Player] Emitting playerDamage: targetId=${target.params_.playerId}, damage=${weapon.damage}`);
+                    this.socket_.emit('playerDamage', { targetId: target.params_.playerId, damage: weapon.damage });
                   }
                 }
               });
@@ -502,13 +554,13 @@ export const player = (() => {
                 onHit: (target) => {
                   console.log(`${attacker.nickname_} hit ${target.nickname_ || 'NPC'} with ${weapon.name}!`);
                   if (this.socket_ && target.params_.isRemote) { // 원격 플레이어에게만 데미지 이벤트 전송
-                    console.log(`[Player] Emitting playerDamage: targetId=${target.params_.playerId}, damage=${weapon.damage}, attackerId=${attacker.socket_.id}`); //**수정 attackerId 추가
-                    this.socket_.emit('playerDamage', { targetId: target.params_.playerId, damage: weapon.damage, attackerId: attacker.socket_.id }); //**수정 attackerId 추가
+                    console.log(`[Player] Emitting playerDamage: targetId=${target.params_.playerId}, damage=${weapon.damage}`);
+                    this.socket_.emit('playerDamage', { targetId: target.params_.playerId, damage: weapon.damage });
                   }
                 }
               });
             }
-          }, attackDelay * 1000);
+          }, actualAttackDelay * 1000);
         }
 
         // SwordSlash 애니메이션 시작 시 무기 회전 초기화
