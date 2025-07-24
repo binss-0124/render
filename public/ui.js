@@ -7,10 +7,12 @@ export class UI {
         this.scoreboard.style.top = '50%';
         this.scoreboard.style.left = '50%';
         this.scoreboard.style.transform = 'translate(-50%, -50%)';
-        this.scoreboard.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+        this.scoreboard.style.backgroundColor = 'rgba(0, 0, 0, 0.8)'; // 배경색 변경 //%%수정
         this.scoreboard.style.color = 'white';
         this.scoreboard.style.padding = '20px';
         this.scoreboard.style.borderRadius = '10px';
+        this.scoreboard.style.border = '3px solid #FFD700'; // 테두리 추가 (금색) //%%수정
+        this.scoreboard.style.fontFamily = 'Impact, Arial Black, sans-serif'; // 폰트 추가 //%%수정
         this.scoreboard.style.display = 'none'; // 기본적으로 숨김
         this.scoreboard.style.zIndex = '1000';
         document.body.appendChild(this.scoreboard);
@@ -46,11 +48,15 @@ export class UI {
 
     // 전체 스코어보드 업데이트
     updateScoreboard(players) {
-        let content = '<h2>Scoreboard</h2>';
-        content += '<table>';
-        content += '<tr><th>Nickname</th><th>Kills</th><th>Deaths</th></tr>';
+        let content = '<h2 style="font-size: 36px; text-align: center; margin-bottom: 20px; text-shadow: 2px 2px 4px #00FFFF;">SCOREBOARD</h2>'; // 헤더 스타일 //%%수정
+        content += '<table style="width: 100%; border-collapse: collapse; border-spacing: 0; font-size: 20px;">'; // 테이블 스타일 //%%수정
+        content += '<tr style="background-color: rgba(255, 255, 255, 0.1);"><th>Nickname</th><th>Kills</th><th>Deaths</th></tr>'; // 헤더 행 스타일 //%%수정
         players.forEach(player => {
-            content += `<tr><td>${player.nickname}</td><td>${player.kills}</td><td>${player.deaths}</td></tr>`;
+            content += `<tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.2);">` + // 행 스타일 //%%수정
+                       `<td style="padding: 10px; text-align: left;">${player.nickname}</td>` + // 닉네임 셀 스타일 //%%수정
+                       `<td style="padding: 10px; text-align: center; color: #00ff00;">${player.kills}</td>` + // 킬 셀 스타일 (녹색) //%%수정
+                       `<td style="padding: 10px; text-align: center; color: #ff0000;">${player.deaths}</td>` + // 데스 셀 스타일 (빨간색) //%%수정
+                       `</tr>`;
         });
         content += '</table>';
         this.scoreboard.innerHTML = content;
