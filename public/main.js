@@ -12,10 +12,10 @@ const socket = io();
 const ui = new UI(); //**수정 UI 인스턴스 생성
 
 export class GameStage1 {
-  constructor(socket, players, map, spawnedWeapons, localPlayerId) { //**수정 localPlayerId 추가
+  constructor(socket, players, map, spawnedWeapons) {
     this.socket = socket;
     this.players = {}; // To store other players' objects
-    this.localPlayerId = localPlayerId; //**수정 localPlayerId 설정
+    this.localPlayerId = socket.id;
     this.playerInfo = players;
     this.map = map;
     this.spawnedWeapons = spawnedWeapons; // Store spawned weapons data
@@ -760,14 +760,17 @@ socket.on('roomJoined', (roomInfo) => {
 });
 
 socket.on('updatePlayers', (players, maxPlayers) => {
-  ui.updateScoreboard(players); //**수정 스코어보드 업데이트
-  ui.updateKD(socket.id, players); //**수정 K/D 업데이트
-  playerSlotsContainer.innerHTML = '';
+  updatePlayers(players, maxPlayers);
+  if (isRoomCreator) {
+    const allReady = players.every(p => p.ready);
+    startGameButton.disabled = !allReady;
+  }
+});
 
 socket.on('startGame', (gameInfo) => {
   waitingRoom.style.display = 'none';
   controls.style.display = 'block';
-  new GameStage1(socket, gameInfo.players, gameInfo.map, gameInfo.spawnedWeapons, socket.id); //**수정 socket.id 전달
+  new GameStage1(socket, gameInfo.players, gameInfo.map, gameInfo.spawnedWeapons);
 });
 
 socket.on('roomError', (message) => {

@@ -1,6 +1,6 @@
 //**수정
 // public/ui.js
-export class UI { //**수정 UI 클래스 내보내기
+class UI {
     constructor() {
         this.scoreboard = document.createElement('div');
         this.scoreboard.id = 'scoreboard';
@@ -15,19 +15,6 @@ export class UI { //**수정 UI 클래스 내보내기
         this.scoreboard.style.display = 'none'; // Hidden by default
         this.scoreboard.style.zIndex = '1000';
         document.body.appendChild(this.scoreboard);
-
-        //**수정 K/D 표시를 위한 새로운 요소 추가
-        this.kdDisplay = document.createElement('div');
-        this.kdDisplay.id = 'kdDisplay';
-        this.kdDisplay.style.position = 'absolute';
-        this.kdDisplay.style.top = '10px';
-        this.kdDisplay.style.right = '10px';
-        this.kdDisplay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-        this.kdDisplay.style.color = 'white';
-        this.kdDisplay.style.padding = '10px';
-        this.kdDisplay.style.borderRadius = '5px';
-        this.kdDisplay.style.zIndex = '999';
-        document.body.appendChild(this.kdDisplay);
     }
 
     toggleScoreboard(show) {
@@ -43,16 +30,6 @@ export class UI { //**수정 UI 클래스 내보내기
         });
         content += '</table>';
         this.scoreboard.innerHTML = content;
-    }
-
-    //**수정 K/D 업데이트 함수 추가
-    updateKD(localPlayerId, players) {
-        const localPlayer = players.find(p => p.id === localPlayerId);
-        if (localPlayer) {
-            this.kdDisplay.innerHTML = `Kills: ${localPlayer.kills} / Deaths: ${localPlayer.deaths}`; //**수정
-        } else {
-            this.kdDisplay.innerHTML = `Kills: 0 / Deaths: 0`; //**수정
-        }
     }
 }
 
