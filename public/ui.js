@@ -30,8 +30,14 @@ export class UI {
         this.kdDisplay.style.fontSize = '24px';
         this.kdDisplay.style.fontWeight = 'bold';
         this.kdDisplay.style.letterSpacing = '1px';
+        this.kdDisplay.style.display = 'none'; // 기본적으로 숨김 //%%수정
         document.body.appendChild(this.kdDisplay);
     }
+
+    // K/D UI 토글 //%%수정
+    toggleKDDisplay(show) { //%%수정
+        this.kdDisplay.style.display = show ? 'block' : 'none'; //%%수정
+    } //%%수정
 
     // 스코어보드 토글
     toggleScoreboard(show) {

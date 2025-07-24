@@ -10,6 +10,7 @@ import { UI } from './ui.js'; //**수정 UI 임포트
 
 const socket = io();
 const ui = new UI(); //**수정 UI 인스턴스 생성
+ui.toggleKDDisplay(false); // K/D UI를 기본적으로 숨김 //%%수정
 
 export class GameStage1 {
   constructor(socket, players, map, spawnedWeapons, localPlayerId) { //**수정 localPlayerId 추가
@@ -24,6 +25,7 @@ export class GameStage1 {
     this.Initialize();
     this.RAF();
     this.SetupSocketEvents();
+    ui.toggleKDDisplay(true); // 게임 시작 시 K/D UI 표시 //%%수정
   }
 
   async Initialize() {
@@ -780,4 +782,5 @@ socket.on('roomError', (message) => {
   menu.style.display = 'flex'; // Show menu again on error
   waitingRoom.style.display = 'none';
   joinRoomPopup.style.display = 'none';
+  ui.toggleKDDisplay(false); // 방 오류 시 K/D UI 숨김 //%%수정
 });
