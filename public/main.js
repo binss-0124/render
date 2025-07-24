@@ -6,17 +6,16 @@ import { math } from './math.js';
 import { hp } from './hp.js'; // hp.js 임포트
 import { WEAPON_DATA, loadWeaponData, spawnWeaponOnMap } from './weapon.js';
 import { AttackSystem } from './attackSystem.js';
-import { UI } from './ui.js'; //**수정 UI 임포트
+import { UI } from './ui.js'; // UI 임포트 추가 //%%수정
 
 const socket = io();
-const ui = new UI(); //**수정 UI 인스턴스 생성
-ui.toggleKDDisplay(false); // K/D UI를 기본적으로 숨김 //%%수정
+const ui = new UI(); // UI 인스턴스 생성 추가 //%%수정
 
 export class GameStage1 {
-  constructor(socket, players, map, spawnedWeapons, localPlayerId) { //**수정 localPlayerId 추가
+  constructor(socket, players, map, spawnedWeapons) {
     this.socket = socket;
     this.players = {}; // To store other players' objects
-    this.localPlayerId = localPlayerId; //**수정 localPlayerId 설정
+    this.localPlayerId = socket.id;
     this.playerInfo = players;
     this.map = map;
     this.spawnedWeapons = spawnedWeapons; // Store spawned weapons data
@@ -25,7 +24,6 @@ export class GameStage1 {
     this.Initialize();
     this.RAF();
     this.SetupSocketEvents();
-    ui.toggleKDDisplay(true); // 게임 시작 시 K/D UI 표시 //%%수정
   }
 
   async Initialize() {
@@ -69,7 +67,6 @@ export class GameStage1 {
 
     window.addEventListener('resize', () => this.OnWindowResize(), false);
     document.addEventListener('keydown', (e) => this._OnKeyDown(e), false);
-    document.addEventListener('keyup', (e) => this._OnKeyUp(e), false); //**수정 KeyUp 이벤트 리스너 추가
   }
 
   SetupLighting() {
@@ -324,6 +321,12 @@ export class GameStage1 {
       }
     });
 
+    this.socket.on('weaponSpawned', (weaponData) => {
+      const weapon = spawnWeaponOnMap(this.scene, weaponData.weaponName, weaponData.x, weaponData.y, weaponData.z, weaponData.uuid);
+      this.spawnedWeaponObjects.push(weapon);
+      console.log(`New weapon ${weaponData.weaponName} spawned at (${weaponData.x}, ${weaponData.y}, ${weaponData.z}). Total: ${this.spawnedWeaponObjects.length}`);
+    });
+
     this.socket.on('playerAttack', (data) => {
       if (data.playerId === this.localPlayerId) return; // Don't update self
       const otherPlayer = this.players[data.playerId];
@@ -411,20 +414,7 @@ export class GameStage1 {
           this.socket.emit('playerAttack', attackAnimation); // 서버에 공격 애니메이션 정보 전송
         }
         break;
-      case 9: // Tab key //**수정
-        event.preventDefault(); //**수정 기본 동작 방지 (예: 포커스 이동) //**수정
-        ui.toggleScoreboard(true); //**수정 스코어보드 표시 //**수정
-        break; //**수정
     }
-  }
-
-  _OnKeyUp(event) { //**수정
-    switch (event.keyCode) { //**수정
-      case 9: // Tab key //**수정
-        event.preventDefault(); //**수정 기본 동작 방지 //**수정
-        ui.toggleScoreboard(false); //**수정 스코어보드 숨김 //**수정
-        break; //**수정
-    } //**수정
   }
 
   RAF(time) {
@@ -459,7 +449,10 @@ export class GameStage1 {
       ) {
         this.damageTimer += delta;
         if (this.damageTimer >= this.damageInterval) {
-          this.player_.TakeDamage(this.damageAmount);
+          const newHp = this.player_.hp_ - this.damageAmount;
+          this.player_.TakeDamage(newHp); // TakeDamage 함수에 새로운 HP 값 전달
+          this.player_.hp_ = newHp; // 실제 HP 값 업데이트
+          this.player_.hpUI.updateHP(newHp); // HP UI 업데이트
           this.damageTimer = 0;
         }
       } else {
@@ -689,8 +682,7 @@ socket.on('publicRoomsList', (rooms) => {
         if (selectedPublicRoomId === room.id) {
           selectedPublicRoomId = null;
           li.style.backgroundColor = '#f9f9f9';
-        }
-        else {
+        } else {
           const prevSelected = document.querySelector('#publicRoomList li[style*="background-color: #e0e0e0"]');
           if (prevSelected) {
             prevSelected.style.backgroundColor = '#f9f9f9';
@@ -763,8 +755,8 @@ socket.on('roomJoined', (roomInfo) => {
 
 socket.on('updatePlayers', (players, maxPlayers) => {
   updatePlayers(players, maxPlayers);
-  ui.updateScoreboard(players); //**수정 스코어보드 업데이트
-  ui.updateKD(socket.id, players); //**수정 K/D 업데이트
+  ui.updateScoreboard(players); // 스코어보드 업데이트 추가 //%%수정
+  ui.updateKD(socket.id, players); // K/D 업데이트 추가 //%%수정
   if (isRoomCreator) {
     const allReady = players.every(p => p.ready);
     startGameButton.disabled = !allReady;
@@ -774,7 +766,7 @@ socket.on('updatePlayers', (players, maxPlayers) => {
 socket.on('startGame', (gameInfo) => {
   waitingRoom.style.display = 'none';
   controls.style.display = 'block';
-  new GameStage1(socket, gameInfo.players, gameInfo.map, gameInfo.spawnedWeapons, socket.id); //**수정 socket.id 전달
+  new GameStage1(socket, gameInfo.players, gameInfo.map, gameInfo.spawnedWeapons);
 });
 
 socket.on('roomError', (message) => {
@@ -782,5 +774,4 @@ socket.on('roomError', (message) => {
   menu.style.display = 'flex'; // Show menu again on error
   waitingRoom.style.display = 'none';
   joinRoomPopup.style.display = 'none';
-  ui.toggleKDDisplay(false); // 방 오류 시 K/D UI 숨김 //%%수정
 });
