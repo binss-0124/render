@@ -10,9 +10,11 @@ import { UI } from './ui.js'; // UI 임포트 추가 //%%수정
 
 const socket = io();
 const ui = new UI(); // UI 인스턴스 생성 추가 //%%수정
+console.log('main.js: UI instance created'); // 디버그 로그 추가 //%%수정
 
 export class GameStage1 {
   constructor(socket, players, map, spawnedWeapons, localPlayerId) { // localPlayerId 매개변수 추가
+    console.log('main.js: GameStage1 constructor called'); // 디버그 로그 추가 //%%수정
     this.socket = socket;
     this.players = {}; // To store other players' objects
     this.localPlayerId = localPlayerId; // localPlayerId 설정
@@ -24,6 +26,8 @@ export class GameStage1 {
     this.Initialize();
     this.RAF();
     this.SetupSocketEvents();
+    ui.toggleKDDisplay(true); // 게임 시작 시 K/D UI 표시 //%%수정
+    console.log('main.js: ui.toggleKDDisplay(true) called'); // 디버그 로그 추가 //%%수정
   }
 
   async Initialize() {
