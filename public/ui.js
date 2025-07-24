@@ -35,6 +35,9 @@ export class UI {
 
   // attackerCharacter와 victimCharacter 매개변수 추가
   addKillFeedMessage(attackerName, victimName, attackerCharacter, victimCharacter) { //%%수정됨
+    // 킬로그 컨테이너를 보이도록 설정
+    this.killFeed.style.display = 'block'; //%%수정됨
+
     const killMessage = document.createElement('div');
     killMessage.style.display = 'flex'; // Flexbox를 사용하여 이미지와 텍스트를 정렬
     killMessage.style.alignItems = 'center'; // 세로 중앙 정렬
@@ -86,8 +89,14 @@ export class UI {
     killMessage.appendChild(victimImg);
 
     this.killFeed.appendChild(killMessage);
+
+    // 메시지가 사라진 후 킬로그 컨테이너를 숨길지 결정
     setTimeout(() => {
       this.killFeed.removeChild(killMessage);
+      // 모든 메시지가 사라지면 킬로그 컨테이너를 숨김
+      if (this.killFeed.children.length === 0) { //%%수정됨
+        this.killFeed.style.display = 'none'; //%%수정됨
+      } //%%수정됨
     }, 5000);
   }
 
