@@ -60,9 +60,9 @@ export class UI {
             // 킬/데스 형식 변경 및 색상 적용 //%%수정
             const killsColor = '#00ff00'; // 밝은 녹색
             const deathsColor = '#ff0000'; // 빨간색
-            this.kdDisplay.innerHTML = `K <span style="color: ${killsColor};">${localPlayer.kills}</span> / D <span style="color: ${deathsColor};">${localPlayer.deaths}</span>`; //%%수정
+            this.kdDisplay.innerHTML = 'K <span style="color: ' + killsColor + ';">' + localPlayer.kills + '</span> / D <span style="color: ' + deathsColor + ';">' + localPlayer.deaths + '</span>'; //%%수정
         } else {
-            this.kdDisplay.innerHTML = `K <span style="color: #00ff00;">0</span> / D <span style="color: #ff0000;">0</span>`; //%%수정
+            this.kdDisplay.innerHTML = 'K <span style="color: #00ff00;">0</span> / D <span style="color: #ff0000;">0</span>'; //%%수정
         }
     }
 }
