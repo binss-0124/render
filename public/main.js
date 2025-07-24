@@ -873,7 +873,7 @@ socket.on('killFeed', (data) => {
 
 socket.on('gameEnd', (finalScores) => {
   // GameStage1 인스턴스가 존재하고 ui 속성이 있는지 확인
-  if (window.currentGameStage1 && window.currentGame1.ui) {
+  if (window.currentGameStage1 && window.currentGameStage1.ui) {
     window.currentGameStage1.ui.showFinalScoreboard(finalScores); //%%수정됨
   }
 });

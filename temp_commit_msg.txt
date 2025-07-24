@@ -1,5 +1,5 @@
-fix: 킬로그 컨테이너 표시/숨김 및 크기 조정, ui.js 구문 오류 해결
+feat: 킬로그 및 게임 종료 스코어보드 UI 개선 및 ui.js 구문 오류 해결
 
-- `public/index.html`에서 킬로그 컨테이너의 초기 `display` 속성을 `none`으로 설정하고 크기 조정
-- `public/ui.js`의 `addKillFeedMessage` 함수에서 킬로그 메시지 추가 시 컨테이너를 보이도록 하고, 모든 메시지 제거 시 다시 숨기도록 로직 추가
-- `public/ui.js`의 `addKillFeedMessage` 함수 내 구문 오류 해결
+- 킬로그 컨테이너 크기를 내용에 맞게 줄이고, 킬로그 메시지 자체의 크기 증가
+- 게임 종료 시 스코어보드를 화면 중앙에 크게 표시하도록 디자인 개선
+- `public/ui.js`의 `showFinalScoreboard` 함수 내 구문 오류 해결
