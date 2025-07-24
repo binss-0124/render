@@ -6,14 +6,16 @@ import { math } from './math.js';
 import { hp } from './hp.js'; // hp.js 임포트
 import { WEAPON_DATA, loadWeaponData, spawnWeaponOnMap } from './weapon.js';
 import { AttackSystem } from './attackSystem.js';
+import { UI } from './ui.js'; //**수정 UI 임포트
 
 const socket = io();
+const ui = new UI(); //**수정 UI 인스턴스 생성
 
 export class GameStage1 {
-  constructor(socket, players, map, spawnedWeapons) {
+  constructor(socket, players, map, spawnedWeapons, localPlayerId) { //**수정 localPlayerId 추가
     this.socket = socket;
     this.players = {}; // To store other players' objects
-    this.localPlayerId = socket.id;
+    this.localPlayerId = localPlayerId; //**수정 localPlayerId 설정
     this.playerInfo = players;
     this.map = map;
     this.spawnedWeapons = spawnedWeapons; // Store spawned weapons data
@@ -65,6 +67,7 @@ export class GameStage1 {
 
     window.addEventListener('resize', () => this.OnWindowResize(), false);
     document.addEventListener('keydown', (e) => this._OnKeyDown(e), false);
+    document.addEventListener('keyup', (e) => this._OnKeyUp(e), false); //**수정 KeyUp 이벤트 리스너 추가
   }
 
   SetupLighting() {
@@ -406,7 +409,20 @@ export class GameStage1 {
           this.socket.emit('playerAttack', attackAnimation); // 서버에 공격 애니메이션 정보 전송
         }
         break;
+      case 9: // Tab key //**수정
+        event.preventDefault(); //**수정 기본 동작 방지 (예: 포커스 이동) //**수정
+        ui.toggleScoreboard(true); //**수정 스코어보드 표시 //**수정
+        break; //**수정
     }
+  }
+
+  _OnKeyUp(event) { //**수정
+    switch (event.keyCode) { //**수정
+      case 9: // Tab key //**수정
+        event.preventDefault(); //**수정 기본 동작 방지 //**수정
+        ui.toggleScoreboard(false); //**수정 스코어보드 숨김 //**수정
+        break; //**수정
+    } //**수정
   }
 
   RAF(time) {
@@ -671,7 +687,8 @@ socket.on('publicRoomsList', (rooms) => {
         if (selectedPublicRoomId === room.id) {
           selectedPublicRoomId = null;
           li.style.backgroundColor = '#f9f9f9';
-        } else {
+        }
+        else {
           const prevSelected = document.querySelector('#publicRoomList li[style*="background-color: #e0e0e0"]');
           if (prevSelected) {
             prevSelected.style.backgroundColor = '#f9f9f9';
@@ -744,6 +761,8 @@ socket.on('roomJoined', (roomInfo) => {
 
 socket.on('updatePlayers', (players, maxPlayers) => {
   updatePlayers(players, maxPlayers);
+  ui.updateScoreboard(players); //**수정 스코어보드 업데이트
+  ui.updateKD(socket.id, players); //**수정 K/D 업데이트
   if (isRoomCreator) {
     const allReady = players.every(p => p.ready);
     startGameButton.disabled = !allReady;
@@ -753,7 +772,7 @@ socket.on('updatePlayers', (players, maxPlayers) => {
 socket.on('startGame', (gameInfo) => {
   waitingRoom.style.display = 'none';
   controls.style.display = 'block';
-  new GameStage1(socket, gameInfo.players, gameInfo.map, gameInfo.spawnedWeapons);
+  new GameStage1(socket, gameInfo.players, gameInfo.map, gameInfo.spawnedWeapons, socket.id); //**수정 socket.id 전달
 });
 
 socket.on('roomError', (message) => {
