@@ -731,10 +731,10 @@
   <!-- In-game UI Elements -->
   <div id="gameUiContainer" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;">
     <!-- Game Start Countdown -->
-    <div id="gameStartCountdown" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 50px; color: white; text-shadow: 2px 2px 4px #000000;">잠시 후 게임이 시작됩니다</div><!--//%%수정됨-->
+    <div id="gameStartCountdown" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 50px; color: white; text-shadow: 2px 2px 4px #000000;">잠시 후 게임이 시작됩니다</div>
 
     <!-- In-game Timer -->
-    <div id="timer" style="position: absolute; top: 20px; left: 50%; transform: translateX(-50%); font-size: 48px; color: #FFD700; text-shadow: 0 0 10px rgba(255,215,0,0.8), 0 0 20px rgba(255,215,0,0.6); background: rgba(0, 0, 0, 0.6); padding: 10px 20px; border-radius: 15px; border: 2px solid #FFD700; box-shadow: 0 0 15px rgba(255,215,0,0.5); font-family: 'Orbitron', sans-serif; display: none;"></div><!--//%%수정됨-->
+    <div id="timer" style="position: absolute; top: 20px; left: 50%; transform: translateX(-50%); font-size: 48px; color: #FFD700; text-shadow: 0 0 10px rgba(255,215,0,0.8), 0 0 20px rgba(255,215,0,0.6); background: rgba(0, 0, 0, 0.6); padding: 10px 20px; border-radius: 15px; border: 2px solid #FFD700; box-shadow: 0 0 15px rgba(255,215,0,0.5); font-family: 'Orbitron', sans-serif; display: none;"></div>
 
     <!-- Kill/Death Log (Kill Feed) -->
     <div id="killFeed" style="position: absolute; top: 20px; right: 20px; width: 300px; text-align: right;"></div>
@@ -1163,6 +1163,7 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script type="module" src="./main.js"></script>
+  <script type="module" src="./ui.js"></script>
 
   <!-- Three.js 및 관련 라이브러리: 3D 모델 렌더링 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>

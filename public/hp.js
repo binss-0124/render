@@ -2,12 +2,15 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.124/build/three.mod
 
 export var hp = (() => { //%%수정
   class HPUI {
-    constructor(scene, renderer, playerName = 'Player') {
+    constructor(scene, renderer, playerName = 'Player', playerId, onDeath = null) { //%%수정됨
       this.scene = scene;
       this.renderer = renderer;
       this.playerName = playerName;
+      this.playerId = playerId; //%%수정됨
       this.hp = 100;
       this.maxHp = 100; // Max HP is always 100 for players
+      this.onDeath = onDeath; //%%수정됨
+      this.lastAttackerId = null; //%%수정됨
 
       this.canvas = document.createElement('canvas');
       this.context = this.canvas.getContext('2d');
@@ -34,7 +37,17 @@ export var hp = (() => { //%%수정
 
     updateHP(newHp) {
       this.hp = newHp;
+      if (this.hp <= 0) {
+        this.hp = 0;
+        if (this.onDeath) {
+          this.onDeath(this.playerId, this.lastAttackerId); //%%수정됨
+        }
+      }
       this.drawUI();
+    }
+
+    setLastAttacker(attackerId) {
+      this.lastAttackerId = attackerId; //%%수정됨
     }
 
     drawUI() {

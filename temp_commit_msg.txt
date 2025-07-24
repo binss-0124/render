@@ -1,1 +1,6 @@
-Fix: UI SyntaxError and non-standard comments
+feat: 플레이어 킬 카운트 기능 구현 및 타이머 UI 개선
+
+- 캐릭터 HP 0 도달 시 마지막 공격자 킬 수 증가 로직 서버에 구현
+- 클라이언트에서 불필요한 playerKilled 이벤트 전송 로직 제거
+- 서버에서 playerKilled 이벤트 핸들러 제거
+- 화면 타이머 디자인 개선

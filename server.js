@@ -23,6 +23,7 @@ function updateRoomPlayers(roomId) {
       deaths: p.deaths
     }));
     io.to(roomId).emit('updatePlayers', playersData, rooms[roomId].maxPlayers);
+    io.to(roomId).emit('updateScores', playersData); //%%수정됨
   }
 }
 
@@ -276,12 +277,13 @@ io.on('connection', (socket) => {
 
         if (targetPlayer.hp === 0) {
           console.log(`${targetPlayer.nickname} (${targetPlayer.id}) has been defeated!`);
+          targetPlayer.deaths++; //%%수정됨
           const attacker = room.players.find(p => p.id === data.attackerId);
-          if (attacker && attacker.id !== targetPlayer.id) { // 공격자가 자신과 다를 경우에만 킬 증가 //%%수정됨
+          if (attacker && attacker.id !== targetPlayer.id) { // 공격자가 자신과 다를 경우에만 킬 증가
             attacker.kills++;
-            io.to(socket.roomId).emit('updateScores', room.players.map(p => ({ id: p.id, nickname: p.nickname, kills: p.kills, deaths: p.deaths }))); //%%수정됨
-            io.to(socket.roomId).emit('killFeed', { attackerName: attacker.nickname, victimName: targetPlayer.nickname }); //%%수정됨
+            io.to(socket.roomId).emit('killFeed', { attackerName: attacker.nickname, victimName: targetPlayer.nickname });
           }
+          io.to(socket.roomId).emit('updateScores', room.players.map(p => ({ nickname: p.nickname, kills: p.kills, deaths: p.deaths }))); //%%수정됨
         }
       } else {
         console.log(`[Server] Target player ${data.targetId} not found in room ${socket.roomId}`);

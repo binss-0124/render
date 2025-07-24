@@ -6,6 +6,7 @@ import { math } from './math.js';
 import { hp } from './hp.js'; // hp.js 임포트
 import { WEAPON_DATA, loadWeaponData, spawnWeaponOnMap, getRandomWeaponName } from './weapon.js';
 import { AttackSystem } from './attackSystem.js';
+import { UI } from './ui.js'; //%%수정됨
 
 const socket = io();
 
@@ -18,6 +19,7 @@ export class GameStage1 {
     this.map = map;
     this.spawnedWeapons = spawnedWeapons; // Store spawned weapons data
     this.spawnedWeaponObjects = []; // Store actual Weapon instances
+    this.ui = new UI(); //%%수정됨
 
     this.Initialize().then(() => {
       this.RAF();
@@ -211,7 +213,7 @@ export class GameStage1 {
       onDebugToggle: (visible) => this.npc_.ToggleDebugVisuals(visible),
       character: localPlayerData.character,
       nickname: localPlayerData.nickname, // 닉네임 추가
-      hpUI: new hp.HPUI(this.scene, this.renderer, localPlayerData.nickname), // HPUI 인스턴스 생성 및 전달
+      hpUI: new hp.HPUI(this.scene, this.renderer, localPlayerData.nickname, this.localPlayerId, this.onPlayerDeath.bind(this)), // HPUI 인스턴스 생성 및 전달 //%%수정됨
       getRespawnPosition: () => this.getRandomPosition(),
       attackSystem: this.attackSystem, // AttackSystem 인스턴스 전달
       socket: this.socket, // socket 인스턴스 전달
@@ -225,7 +227,12 @@ export class GameStage1 {
     this.rotationAngle = 4.715;
   }
 
-  OnWindowResize() {
+  onPlayerDeath(victimId, attackerId) {
+    console.log(`Player ${victimId} died. Attacker: ${attackerId}`);
+    this.socket.emit('playerDied', { victimId: victimId, attackerId: attackerId });
+  }
+
+  OnWindowResize() { //%%수정됨
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -260,7 +267,7 @@ export class GameStage1 {
           nickname: remotePlayerData.nickname, // 닉네임 추가
           isRemote: true,
           playerId: remotePlayerData.id, // playerId 추가
-          hpUI: new hp.HPUI(this.scene, this.renderer, remotePlayerData.nickname), // 원격 플레이어 HPUI 생성
+          hpUI: new hp.HPUI(this.scene, this.renderer, remotePlayerData.nickname, remotePlayerData.id, this.onPlayerDeath.bind(this)), // 원격 플레이어 HPUI 생성 //%%수정됨
           attackSystem: this.attackSystem, // AttackSystem 인스턴스 전달
           socket: this.socket // socket 인스턴스 전달
         });
@@ -341,6 +348,9 @@ export class GameStage1 {
       if (targetPlayer) {
         const oldHp = targetPlayer.hp_;
         targetPlayer.hp_ = data.hp; // 서버에서 받은 HP로 직접 설정
+        if (data.attackerId) { //%%수정됨
+          targetPlayer.hpUI.setLastAttacker(data.attackerId); //%%수정됨
+        } //%%수정됨
         targetPlayer.hpUI.updateHP(data.hp); // UI 업데이트
         console.log(`[Main] ${targetPlayer.nickname_}'s HP updated to: ${targetPlayer.hp_}`);
 
@@ -373,12 +383,12 @@ export class GameStage1 {
         }
       }
     });
-  }
+    }
 
   _OnKeyDown(event) {
     if (event.code === 'Tab') {
         event.preventDefault();
-        document.getElementById('scoreboard').style.display = 'block';
+        this.ui.showScoreboard(); //%%수정됨
     }
     switch (event.keyCode) {
       case 69: // E key
@@ -439,7 +449,7 @@ export class GameStage1 {
 
   _OnKeyUp(event) {
     if (event.code === 'Tab') {
-        document.getElementById('scoreboard').style.display = 'none';
+        this.ui.hideScoreboard(); //%%수정됨
     }
   }
 
@@ -476,7 +486,7 @@ export class GameStage1 {
         this.damageTimer += delta;
         if (this.damageTimer >= this.damageInterval) {
           if (!this.player_.isDead_) { // 플레이어가 죽은 상태가 아닐 때만 데미지 적용
-            this.socket.emit('playerDamage', { targetId: this.localPlayerId, damage: this.damageAmount });
+            this.socket.emit('playerDamage', { targetId: this.localPlayerId, damage: this.damageAmount, attackerId: null }); //%%수정됨
           }
           this.damageTimer = 0;
         }
@@ -800,9 +810,16 @@ socket.on('startGame', (gameInfo) => {
       clearInterval(countdownInterval);
       gameStartCountdown.style.display = 'none';
       socket.emit('gameStart'); // 게임 시작 이벤트 서버로 전송 //%%수정됨
-      new GameStage1(socket, gameInfo.players, gameInfo.map, gameInfo.spawnedWeapons);
+      window.currentGameStage1 = new GameStage1(socket, gameInfo.players, gameInfo.map, gameInfo.spawnedWeapons);
     }
   }, 1000);
+});
+
+socket.on('roomError', (message) => {
+  alert(`방 오류: ${message}`);
+  menu.style.display = 'flex'; // Show menu again on error
+  waitingRoom.style.display = 'none';
+  joinRoomPopup.style.display = 'none';
 });
 
 socket.on('updateTimer', (time) => {
@@ -816,67 +833,25 @@ socket.on('updateTimer', (time) => {
 });
 
 socket.on('updateScores', (scores) => {
-    const scoreboardBody = document.querySelector('#scoreboardTable tbody');
-    scoreboardBody.innerHTML = '';
-    scores.forEach(player => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td style="padding: 10px;">${player.nickname}</td>
-            <td style="padding: 10px;">${player.kills}</td>
-            <td style="padding: 10px;">${player.deaths}</td>
-        `;
-        scoreboardBody.appendChild(row);
-    });
+  // GameStage1 인스턴스가 존재하고 ui 속성이 있는지 확인
+  if (window.currentGameStage1 && window.currentGameStage1.ui) {
+    window.currentGameStage1.ui.updateScoreboard(scores); //%%수정됨
+  }
 });
 
 socket.on('killFeed', (data) => {
-    const killFeed = document.getElementById('killFeed');
-    const killMessage = document.createElement('div');
-    killMessage.textContent = `${data.attackerName} killed ${data.victimName}`;
-    killMessage.style.color = 'white';
-    killMessage.style.marginBottom = '5px';
-    killFeed.appendChild(killMessage);
-    setTimeout(() => {
-        killFeed.removeChild(killMessage);
-    }, 5000);
+  // GameStage1 인스턴스가 존재하고 ui 속성이 있는지 확인
+  if (window.currentGameStage1 && window.currentGameStage1.ui) {
+    window.currentGameStage1.ui.addKillFeedMessage(data.attackerName, data.victimName); //%%수정됨
+  }
 });
 
 socket.on('gameEnd', (finalScores) => {
-    const gameEndScreen = document.getElementById('gameEndScreen');
-    const finalScoreboard = document.getElementById('finalScoreboard');
-    const finalScoreboardTable = document.createElement('table');
-    finalScoreboardTable.style.color = 'white';
-    finalScoreboardTable.style.width = '400px';
-    finalScoreboardTable.style.borderCollapse = 'collapse';
-    finalScoreboardTable.innerHTML = `
-        <thead>
-            <tr>
-                <th style="padding: 10px; border-bottom: 1px solid white;">Player</th>
-                <th style="padding: 10px; border-bottom: 1px solid white;">Kills</th>
-                <th style="padding: 10px; border-bottom: 1px solid white;">Deaths</th>
-            </tr>
-        </thead>
-        <tbody>
-            ${finalScores.map(player => `
-                <tr>
-                    <td style="padding: 10px;">${player.nickname}</td>
-                    <td style="padding: 10px;">${player.kills}</td>
-                    <td style="padding: 10px;">${player.deaths}</td>
-                </tr>
-            `).join('')}
-        </tbody>
-    `;
-    finalScoreboard.innerHTML = '';
-    finalScoreboard.appendChild(finalScoreboardTable);
-    gameEndScreen.style.display = 'flex';
-    document.getElementById('backToLobbyButton').addEventListener('click', () => {
-        window.location.reload();
-    });
+  // GameStage1 인스턴스가 존재하고 ui 속성이 있는지 확인
+  if (window.currentGameStage1 && window.currentGame1.ui) {
+    window.currentGameStage1.ui.showFinalScoreboard(finalScores); //%%수정됨
+  }
 });
 
-socket.on('roomError', (message) => {
-  alert(`방 오류: ${message}`);
-  menu.style.display = 'flex'; // Show menu again on error
-  waitingRoom.style.display = 'none';
-  joinRoomPopup.style.display = 'none';
-});
+
+  
